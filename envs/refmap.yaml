@@ -1,0 +1,9 @@
+name: refMapping
+channels:
+ - bioconda
+ - conda-forge
+ - defaults
+dependencies:
+ - netcdf4=1.4.1
+ - samtools
+ - minimap2

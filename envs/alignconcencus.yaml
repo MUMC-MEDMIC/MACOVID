@@ -1,0 +1,8 @@
+name: alignconsenceus
+channels:
+ - bioconda
+ - conda-forge
+ - defaults
+dependencies:
+ - biopython
+ - argparse
