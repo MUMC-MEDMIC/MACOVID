@@ -7,4 +7,4 @@ OUTDIR = config['parameters']['outdir'] + "/"
 
 rule all:
     input:
-        expand("{sample}_consensus.fasta", sample = SAMPLES)
+        expand(OUTDIR + "{sample}_consensus.fasta", sample = SAMPLES)
