@@ -40,15 +40,16 @@ def main(command_line = None):
     #add sub parser object
     subparsers = parser.add_subparsers(dest = "mode")
     #add snakemake pipeline to completely run fasta to clustered output
-    snakemake = subparsers.add_parser("mapreads", help = "run full pipeline from fastq to consensus sequence")
-    mapreads.add_argument("-i", required = True, dest = "input_files", nargs = "+")
+    mapreads = subparsers.add_parser("mapreads", help = "run full pipeline from fastq to consensus sequence")
+    mapreads.add_argument("-i", required = True, dest = "input_files", nargs = "+", help = 'give fastq files, and use basename to shoot into the pipeline')
     mapreads.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
-    mapreads..add_argument("-o", required = True, dest = "outdir")
+    mapreads.add_argument("-o", required = True, dest = "outdir")
 
 
 ####################
 # parsing part
 ####################
+    args = parser.parse_args(command_line)
     if args.mode == "mapreads":
         snakemake_in(
                 samples = args.input_files,
