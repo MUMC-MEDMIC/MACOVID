@@ -3,6 +3,8 @@
 from argparse import ArgumentParser
 import yaml
 import os
+import pandas as pd
+
 
 locationrepo = os.path.dirname(os.path.abspath(__file__)) 
 
@@ -11,6 +13,10 @@ def get_absolute_path(path):
 
 def file_name_generator(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
+
+###################
+# Snakemake pipeline for generating consensus fastas
+###################
 
 def snakemake_in(samples, outdir):
     samplesdic = {}
@@ -28,6 +34,21 @@ def snakemake_in(samples, outdir):
     os.system(f"mkdir -p {locationrepo}/config")
     with open(f"{locationrepo}/config/config.yaml", 'w') as f:
         f.write(data)
+
+####################
+# basecalling on GPU node & changing the names of barcoded samples
+####################
+
+def basecall(indir, outdir):
+    os.chdir(locationrepo)
+    os.system(f"bin/basecall.sh {indir} {outdir}")
+
+def change_names(outdir, manifest):
+    names = pd.read_csv(manifest, index_col = 0)
+
+    
+
+
 
 ####################
 # Command line Parsers initialization
@@ -58,6 +79,16 @@ def main(command_line = None):
         os.chdir(f"{locationrepo}")
         os.system(f"snakemake --cores {args.cores} --use-conda")
 
+    elif args.mode == "basecall":
+        basecall(
+                indir = args.input_dir,
+                outdir = args.output_dir,
+                )
+        
+        change_names(
+                outdir = args.output_dir,
+                manifest = args.manifest
+                )
     else:
         parser.print_usage()
 
