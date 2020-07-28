@@ -1,0 +1,11 @@
+
+# python
+*.pyc
+
+# snakemake
+.snakemake/*
+
+
+# mac
+
+
