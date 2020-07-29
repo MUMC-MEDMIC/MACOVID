@@ -1,7 +1,0 @@
-SAMPLES:
-  SRR11844877_1: /home/giang.le/covid/SRR11844877_1.fastq
-  SRR11844878_1: /home/giang.le/covid/SRR11844878_1.fastq
-  SRR11852109: /home/giang.le/covid/SRR11852109.fastq
-  SRR11852109_1: /home/giang.le/covid/SRR11852109_1.fastq
-parameters:
-  outdir: /home/giang.le/covid/out
