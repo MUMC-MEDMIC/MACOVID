@@ -7,17 +7,15 @@ OUTDIR = config['parameters']['outdir'] + "/"
 
 rule all:
     input:
-        expand(OUTDIR + "{sample}_trimmed.fastq", sample = SAMPLES),
-        expand(OUTDIR + "{sample}_mapped.bam", sample = SAMPLES),
-        expand(OUTDIR + "{sample}_mapped.bam.bai", sample = SAMPLES),
-        expand(OUTDIR + "{sample}_consencus.fasta", sample = SAMPLES),
-        expand(OUTDIR + "{sample}_fin.fasta", sample = SAMPLES),
+        expand(OUTDIR + "{sample}_final.fasta", sample = SAMPLES),
+
+localrules: combine, 
 
 rule trimming:
     input:
         lambda wildcards: SAMPLES[wildcards.sample]
     output:
-        OUTDIR + "{sample}_trimmed.fastq"
+        temp(OUTDIR + "{sample}_trimmed.fastq")
     conda:
         "envs/cutadapt.yaml"
     threads: 4
@@ -31,10 +29,10 @@ rule mapping:
         trim=OUTDIR + "{sample}_trimmed.fastq",
         ref="reference.fasta"
     output:
-        OUTDIR + "{sample}_mapped.bam"
+        temp(OUTDIR + "{sample}_mapped.bam")
     conda:
         "envs/refmap.yaml"
-    threads: 10
+    threads: 5
     shell:
         """
         minimap2 -Y -t {threads} -x map-ont -a {input.ref} {input.trim} | samtools view -bF 4 - | samtools sort -@ {threads} - > {output}
@@ -44,7 +42,7 @@ rule bamIndex:
     input:
         OUTDIR + "{sample}_mapped.bam"
     output:
-        OUTDIR + "{sample}_mapped.bam.bai"
+        temp(OUTDIR + "{sample}_mapped.bam.bai")
     conda:
         "envs/refmap.yaml"
     threads: 1
@@ -61,9 +59,10 @@ rule bam2concensus:
         OUTDIR + "{sample}_consencus.fasta"
     conda:
         "envs/bam2concencus.yaml"
+    params: 30
     shell:
         """
-        bin/bam2consensus.py -i {input.bamfile} -o {output} -d 30 -g 1
+        bin/bam2consensus.py -i {input.bamfile} -o {output} -d {params} -g 1
         """
 
 rule align_consensus:
@@ -71,10 +70,11 @@ rule align_consensus:
         consen=OUTDIR + "{sample}_consencus.fasta",
         ref="reference.fasta"
     output:
-        OUTDIR + "{sample}_fin.fasta"
+        OUTDIR + "{sample}_final.fasta"
     conda:
         "envs/alignconcencus.yaml"
     shell:
         """
         bin/align_to_ref.py -i {input.consen} -o {output} -r {input.ref} -n {wildcards.sample}
         """
+
