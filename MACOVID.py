@@ -40,6 +40,9 @@ def snakemake_in(samples, outdir):
 ####################
 
 def basenamechanger(namedict, path):
+    """
+    take full path a sample and change the base name of that sample accordig to the added dictionary
+    """
     basename = path.split("/")[-1].split(".fastq")[0]
     location = "/".join(path.split("/")[:-1])
     
