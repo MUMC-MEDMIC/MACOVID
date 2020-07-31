@@ -105,7 +105,7 @@ def main(command_line = None):
                 outdir = args.outdir,
                 )
         os.chdir(f"{locationrepo}")
-        os.system(f"snakemake --cores {args.cores} --use-conda")
+        os.system(f"snakemake --cluster 'sbatch' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
 
     elif args.mode == "namechanger":
         change_names(

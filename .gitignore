@@ -9,3 +9,5 @@
 # mac
 .DS_Store
 
+# folders
+config/
