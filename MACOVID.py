@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-
+import shutil
 from argparse import ArgumentParser
 import yaml
 import os
+import pandas as pd
+
 
 locationrepo = os.path.dirname(os.path.abspath(__file__)) 
 
@@ -11,6 +13,10 @@ def get_absolute_path(path):
 
 def file_name_generator(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
+
+###################
+# Snakemake pipeline for generating consensus fastas
+###################
 
 def snakemake_in(samples, outdir):
     samplesdic = {}
@@ -30,6 +36,41 @@ def snakemake_in(samples, outdir):
         f.write(data)
 
 ####################
+# changing the names of barcoded samples
+####################
+
+def basenamechanger(namedict, path):
+    basename = path.split("/")[-1].split(".fastq")[0]
+    location = "/".join(path.split("/")[:-1])
+    
+
+    return location + "/" + namedict[basename]
+
+def change_names(samples, manifest, reverse ):
+    """
+    take samples and change name according to the manifest file.
+    if -rev flag is used, the samples are converted back 
+    """
+    print(f'reverse is {reverse}')
+    if reverse:
+        pos = 1 
+    else:
+        pos = 0 
+    names = pd.read_csv(manifest, index_col = pos, sep = ";").dropna().to_dict()
+    # take the one and only key in this nested dict
+    key = [x for x in names.keys()][0]
+    names = names[key]
+    for i in samples:
+        try:
+            newname = basenamechanger(names, i)
+            shutil.move(i, newname + ".fastq")
+        except:
+            print(f'Could not change name of {i}, not present in manifest')
+    
+
+
+
+####################
 # Command line Parsers initialization
 ####################
 
@@ -45,10 +86,15 @@ def main(command_line = None):
     mapreads.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
     mapreads.add_argument("-o", required = True, dest = "outdir")
 
+    namechange = subparsers.add_parser("namechanger", help = "change barcode names")
+    namechange.add_argument("-i", required = True, nargs = "+", dest = "input_samples")
+    namechange.add_argument("-csv", required = True, dest = "manifest")
+    namechange.add_argument("-rev", required = False, dest = "rev", action = "store_true") 
 
 ####################
 # parsing part
 ####################
+
     args = parser.parse_args(command_line)
     if args.mode == "mapreads":
         snakemake_in(
@@ -58,6 +104,12 @@ def main(command_line = None):
         os.chdir(f"{locationrepo}")
         os.system(f"snakemake --cores {args.cores} --use-conda")
 
+    elif args.mode == "namechanger":
+        change_names(
+                samples = args.input_samples,
+                manifest = args.manifest,
+                reverse = args.rev 
+                )
     else:
         parser.print_usage()
 
