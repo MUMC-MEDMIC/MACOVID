@@ -6,3 +6,4 @@ channels:
 dependencies:
  - pysam
  - argparse
+ - python=3.6
