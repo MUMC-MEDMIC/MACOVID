@@ -6,3 +6,4 @@ channels:
 dependencies:
  - biopython
  - argparse
+ - python=3.6
