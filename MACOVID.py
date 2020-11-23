@@ -59,7 +59,7 @@ def change_names(samples, manifest, reverse ):
         pos = 1 
     else:
         pos = 0 
-    names = pd.read_csv(manifest, index_col = pos, sep = ";").dropna().to_dict()
+    names = pd.read_csv(manifest, index_col = pos, sep = ";|\t", engine = 'python').dropna().to_dict()
     # take the one and only key in this nested dict
     key = [x for x in names.keys()][0]
     names = names[key]
