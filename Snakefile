@@ -56,9 +56,9 @@ rule bam2concensus:
         bamfile = OUTDIR + "{sample}_mapped.bam",
         sortfile = OUTDIR + "{sample}_mapped.bam.bai"
     output:
-        OUTDIR + "{sample}_consencus.fasta"
+        OUTDIR + "{sample}_consensus.fasta"
     conda:
-        "envs/bam2concencus.yaml"
+        "envs/bam2concensus.yaml"
     params: 30
     shell:
         """
@@ -67,12 +67,12 @@ rule bam2concensus:
 
 rule align_consensus:
     input:
-        consen=OUTDIR + "{sample}_consencus.fasta",
+        consen=OUTDIR + "{sample}_consensus.fasta",
         ref="reference.fasta"
     output:
         OUTDIR + "{sample}_final.fasta"
     conda:
-        "envs/alignconcencus.yaml"
+        "envs/alignconcensus.yaml"
     shell:
         """
         bin/align_to_ref.py -i {input.consen} -o {output} -r {input.ref} -n {wildcards.sample}
