@@ -1,9 +1,0 @@
-name: bam2consenceus
-channels:
- - bioconda
- - conda-forge
- - defaults
-dependencies:
- - pysam
- - argparse
- - python=3.6
