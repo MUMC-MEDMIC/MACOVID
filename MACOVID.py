@@ -4,6 +4,9 @@ from argparse import ArgumentParser
 import yaml
 import os
 import pandas as pd
+import re
+import glob
+import sys
 
 
 locationrepo = os.path.dirname(os.path.abspath(__file__)) 
@@ -15,11 +18,39 @@ def file_name_generator(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 ###################
+# Define the input files
+###################
+
+def define_input(inputdir):
+    ## Input dir treated as list. Remove square brackets
+    if bool(re.search("\[*\]", str(inputdir))):
+         inputdir = str(inputdir)[2:-2]
+
+    ## Remove last slash if existed in the input folder
+    if str(inputdir)[-1] == "/":
+        inputdir = inputdir[:-1]
+
+    ## Path of folder with fastq files
+    inputPath = get_absolute_path(inputdir)
+
+    ## Fastq files
+    fastqFiles = glob.glob(f"{inputPath}/*fastq*")
+
+    ## Check fastq files
+    if len(fastqFiles) == 0:
+        print ("Check directory no fastq file found")
+        sys.exit()
+
+    return fastqFiles
+
+###################
 # Snakemake pipeline for generating consensus fastas
 ###################
 
 def snakemake_in(samples, outdir):
+    ## Sample dictionary
     samplesdic = {}
+    ## parameter for the ourDir
     samplesdic['parameters'] = {}
     samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
     samplesdic["SAMPLES"] = {}
@@ -39,17 +70,7 @@ def snakemake_in(samples, outdir):
 # changing the names of barcoded samples
 ####################
 
-def basenamechanger(namedict, path):
-    """
-    take full path a sample and change the base name of that sample accordig to the added dictionary
-    """
-    basename = path.split("/")[-1].split(".fastq")[0]
-    location = "/".join(path.split("/")[:-1])
-    
-
-    return location + "/" + namedict[basename]
-
-def change_names(samples, manifest, reverse ):
+def change_names(sampledir, manifest, reverse ):
     """
     take samples and change name according to the manifest file.
     if -rev flag is used, the samples are converted back 
@@ -59,20 +80,36 @@ def change_names(samples, manifest, reverse ):
         pos = 1 
     else:
         pos = 0 
-    names = pd.read_csv(manifest, index_col = pos, sep = ";|\t", engine = 'python').dropna().to_dict()
-    # take the one and only key in this nested dict
+    ## Read csv files:
+    names = pd.read_csv(manifest, index_col = pos, sep = ",|;|\t", engine = 'python').dropna().to_dict()
+
+#    print (names)
+    ## Key is the sample_ID in this nested dict
     key = [x for x in names.keys()][0]
-    names = names[key]
-    for i in samples:
-        try:
-            newname = basenamechanger(names, i)
-            shutil.move(i, newname + ".fastq")
-        except:
-            print(f'Could not change name of {i}, not present in manifest')
-    
+    barcodes = names[key]
 
+#    print (barcodes)
+    ## Identify fastq files
+    fastqFiles = define_input(sampledir)
+#    print (fastqFiles)
 
+    runFiles = []
+    ## Loop through fastq file found
+    for q in fastqFiles:
+        ## Loop through barcode dictionary
+        for k,v in barcodes.items():
+            basename = q.split("/")[-1].split(".fastq")[0]
 
+            if basename == v:
+#                print (basename)
+                location = os.path.dirname(q)
+#                print (location)
+                newFile = location + "/" + f"{k}.fastq"
+#                print (newFile)
+                shutil.move(q, newFile)
+                runFiles.append(newFile)
+
+    print (runFiles)
 ####################
 # Command line Parsers initialization
 ####################
@@ -94,6 +131,7 @@ def main(command_line = None):
     namechange.add_argument("-csv", required = True, dest = "manifest")
     namechange.add_argument("-rev", required = False, dest = "rev", action = "store_true") 
 
+
 ####################
 # parsing part
 ####################
@@ -109,7 +147,7 @@ def main(command_line = None):
 
     elif args.mode == "namechanger":
         change_names(
-                samples = args.input_samples,
+                sampledir = args.input_samples,
                 manifest = args.manifest,
                 reverse = args.rev 
                 )

@@ -1,13 +1,16 @@
-
-# python
-*.pyc
-
-# snakemake
-.snakemake/*
-
-
-# mac
+#macOS specific stuff
 .DS_Store
 
-# folders
-config/
+
+
+# snakemake stuff
+.snakemake
+slurm-*
+*.swp
+*.fastq
+MACOVID_manifest.csv
+
+# pipeline
+results/*
+config/*
+temp/*
