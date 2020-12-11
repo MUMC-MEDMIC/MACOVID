@@ -43,29 +43,6 @@ def define_input(inputdir):
 
     return fastqFiles
 
-###################
-# Snakemake pipeline for generating consensus fastas
-###################
-
-def snakemake_in(samples, outdir):
-    ## Sample dictionary
-    samplesdic = {}
-    ## parameter for the ourDir
-    samplesdic['parameters'] = {}
-    samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
-    samplesdic["SAMPLES"] = {}
-    
-    # generate the samples dictionary as input for snakemake 
-    for i in samples:
-        samplename = file_name_generator(i)
-        samplesdic["SAMPLES"][samplename] = get_absolute_path(i)
-    data = yaml.dump(samplesdic, default_flow_style=False)
-    
-    # make and write config file location
-    os.system(f"mkdir -p {locationrepo}/config")
-    with open(f"{locationrepo}/config/config.yaml", 'w') as f:
-        f.write(data)
-
 ####################
 # changing the names of barcoded samples
 ####################
@@ -77,9 +54,9 @@ def change_names(sampledir, manifest, reverse ):
     """
     print(f'reverse is {reverse}')
     if reverse:
-        pos = 1 
-    else:
         pos = 0 
+    else:
+        pos = 1 
     ## Read csv files:
     names = pd.read_csv(manifest, index_col = pos, sep = ",|;|\t", engine = 'python').dropna().to_dict()
 
@@ -109,7 +86,34 @@ def change_names(sampledir, manifest, reverse ):
                 shutil.move(q, newFile)
                 runFiles.append(newFile)
 
-    print (runFiles)
+    return runFiles
+###################
+# Snakemake pipeline for generating consensus fastas
+###################
+
+def snakemake_in(sampledir, manifest, outdir):
+
+    samples = change_names(sampledir, manifest, False)
+    print ("runiing samples", samples)
+
+    ## Sample dictionary
+    samplesdic = {}
+    ## parameter for the ourDir
+    samplesdic['parameters'] = {}
+    samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
+    samplesdic["SAMPLES"] = {}
+    
+    # generate the samples dictionary as input for snakemake 
+    for i in samples:
+        samplename = file_name_generator(i)
+        samplesdic["SAMPLES"][samplename] = get_absolute_path(i)
+    data = yaml.dump(samplesdic, default_flow_style=False)
+    
+    # make and write config file location
+    os.system(f"mkdir -p {locationrepo}/config")
+    with open(f"{locationrepo}/config/config.yaml", 'w') as f:
+        f.write(data)
+
 ####################
 # Command line Parsers initialization
 ####################
@@ -122,12 +126,13 @@ def main(command_line = None):
     subparsers = parser.add_subparsers(dest = "mode")
     #add snakemake pipeline to completely run fasta to clustered output
     mapreads = subparsers.add_parser("mapreads", help = "run full pipeline from fastq to consensus sequence")
-    mapreads.add_argument("-i", required = True, dest = "input_files", nargs = "+", help = 'give fastq files, and use basename to shoot into the pipeline')
+    mapreads.add_argument("-i", required = True, dest = "input_directory", nargs = "+", help = 'give fastq files, and use basename to shoot into the pipeline')
     mapreads.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
     mapreads.add_argument("-o", required = True, dest = "outdir")
+    mapreads.add_argument("-csv", required = True, dest = "manifest")
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
-    namechange.add_argument("-i", required = True, nargs = "+", dest = "input_samples")
+    namechange.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
     namechange.add_argument("-csv", required = True, dest = "manifest")
     namechange.add_argument("-rev", required = False, dest = "rev", action = "store_true") 
 
@@ -139,7 +144,8 @@ def main(command_line = None):
     args = parser.parse_args(command_line)
     if args.mode == "mapreads":
         snakemake_in(
-                samples = args.input_files,
+                sampledir = args.input_directory,
+                manifest = args.manifest,
                 outdir = args.outdir,
                 )
         os.chdir(f"{locationrepo}")
@@ -147,7 +153,7 @@ def main(command_line = None):
 
     elif args.mode == "namechanger":
         change_names(
-                sampledir = args.input_samples,
+                sampledir = args.input_directory,
                 manifest = args.manifest,
                 reverse = args.rev 
                 )
