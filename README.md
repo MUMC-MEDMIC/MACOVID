@@ -30,29 +30,34 @@ The content of the manifest.csv file:
 | barcode9   | SRR678_1  |
 | barcode32  | SRR0234   |
 
-To run the analysis:
+
+### Core run
+
+Requires input directory, manifest file (csv), output directory and the number of cores for running. MACOVID scans for fastq files in the input directory. Found fastq files are automatically renamed from barcod to sample IDs based on information in the manifest. Analysis is carried out with the fasta and concensus files are generated in the output directory.
 
 ```
-python MACOVID.py mapreads -i FASTQ_DIRECTORY -csv MACOVID_MANIFEST -o OUTPUTDIR --cores X
+python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X
 ```
-
-MACOVID will scan for fastq files in the input directory. The script will only run if the directory contain the correct fastq files.
-Found barcode files are renamed to sample IDs based on information from the manifest. Analysis is carried out right after and final files are stored in the output directory.
-
 
 ### Standalone renaming
 
-Rename barcode to sample ID:
+To rename from barcode to the sample id based on the manifest file:
 
 ```
-python MACOVID.py namechanger -i FASTQ_DIRECTORY -csv MACOVID_manifest.csv 
+python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv 
 ```
 
-To reverse sample ID back to barcode:
+To reverse sample ID back to barcode based on the manifest file:
 
 ```
-python MACOVID.py namechanger -i FASTQ_DIRECTORY -csv MACOVID_manifest.csv -rev
+python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 ```
 
+To rerun samples from specific folder. It is possible to run files in gz format. The output directory and number of cores must be specify.
 
+Note: The sript makes use of Snakemake so if the output directory contains the final files of the rerun, those files will not be analysis. Solution: remove old file or pick a new output directory. 
+
+```
+python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X
+```
 

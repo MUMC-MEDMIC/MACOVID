@@ -47,14 +47,14 @@ def define_input(inputdir):
 # changing the names of barcoded samples
 ####################
 
-def change_names(sampledir, manifest, reverse ):
+def change_names(sampledir, manifest, reverse):
     """
     take samples and change name according to the manifest file.
     if -rev flag is used, the samples are converted back 
     """
     print(f'reverse is {reverse}')
     if reverse:
-        pos = 0 
+        pos = 0
     else:
         pos = 1 
     ## Read csv files:
@@ -73,15 +73,17 @@ def change_names(sampledir, manifest, reverse ):
     runFiles = []
     ## Loop through fastq file found
     for q in fastqFiles:
+#        print (q)
         ## Loop through barcode dictionary
         for k,v in barcodes.items():
+#            print (q,k,v)
             basename = q.split("/")[-1].split(".fastq")[0]
-
-            if basename == v:
-#                print (basename)
+#            print ("fastq",basename,k, v)
+            if basename == k:
+#                print (basename, v)
                 location = os.path.dirname(q)
 #                print (location)
-                newFile = location + "/" + f"{k}.fastq"
+                newFile = location + "/" + f"{v}.fastq"
 #                print (newFile)
                 shutil.move(q, newFile)
                 runFiles.append(newFile)
@@ -91,10 +93,7 @@ def change_names(sampledir, manifest, reverse ):
 # Snakemake pipeline for generating consensus fastas
 ###################
 
-def snakemake_in(sampledir, manifest, outdir):
-
-    samples = change_names(sampledir, manifest, False)
-    print ("runiing samples", samples)
+def snakemake_in(samplesin, outdir):
 
     ## Sample dictionary
     samplesdic = {}
@@ -104,7 +103,7 @@ def snakemake_in(sampledir, manifest, outdir):
     samplesdic["SAMPLES"] = {}
     
     # generate the samples dictionary as input for snakemake 
-    for i in samples:
+    for i in samplesin:
         samplename = file_name_generator(i)
         samplesdic["SAMPLES"][samplename] = get_absolute_path(i)
     data = yaml.dump(samplesdic, default_flow_style=False)
@@ -129,13 +128,17 @@ def main(command_line = None):
     mapreads.add_argument("-i", required = True, dest = "input_directory", nargs = "+", help = 'give fastq files, and use basename to shoot into the pipeline')
     mapreads.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
     mapreads.add_argument("-o", required = True, dest = "outdir")
-    mapreads.add_argument("-csv", required = True, dest = "manifest")
+    mapreads.add_argument("-m", required = True, dest = "manifest")
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
     namechange.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
-    namechange.add_argument("-csv", required = True, dest = "manifest")
+    namechange.add_argument("-m", required = True, dest = "manifest")
     namechange.add_argument("-rev", required = False, dest = "rev", action = "store_true") 
 
+    rerun = subparsers.add_parser("rerun", help = "Rerun samples")
+    rerun.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
+    rerun.add_argument("-o", required = True, dest = "outdir")
+    rerun.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
 
 ####################
 # parsing part
@@ -143,20 +146,38 @@ def main(command_line = None):
 
     args = parser.parse_args(command_line)
     if args.mode == "mapreads":
-        snakemake_in(
+        ## Set running location where MACOVID is located
+        os.chdir(f"{locationrepo}")
+
+        ## Change name according to manifest
+        samplesin = change_names(
                 sampledir = args.input_directory,
                 manifest = args.manifest,
-                outdir = args.outdir,
+                reverse ="FALSE",
                 )
-        os.chdir(f"{locationrepo}")
+#        print (samplesin)
+        snakemake_in(
+                samplesin = samplesin,
+                outdir = args.outdir
+                )
         os.system(f"snakemake --cluster 'sbatch' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
 
     elif args.mode == "namechanger":
-        change_names(
+       change_names(
                 sampledir = args.input_directory,
                 manifest = args.manifest,
                 reverse = args.rev 
                 )
+    elif args.mode == "rerun":
+        samplesin = define_input(
+                inputdir = args.input_directory,
+                )
+        snakemake_in(
+                samplesin = samplesin,
+                outdir = args.outdir
+                )
+        os.system(f"snakemake --cluster 'sbatch' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
+
     else:
         parser.print_usage()
 
