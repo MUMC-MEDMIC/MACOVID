@@ -36,6 +36,9 @@ def define_input(inputdir):
     ## Fastq files
     fastqFiles = glob.glob(f"{inputPath}/*fastq*")
 
+    ## Remove unclassified files
+    fastqFiles[:] = [x for x in fastqFiles if "unclassified" not in x]
+
     ## Check fastq files
     if len(fastqFiles) == 0:
         print ("Check directory no fastq file found")
@@ -157,7 +160,6 @@ def main(command_line = None):
                 manifest = args.manifest,
                 reverse ="FALSE",
                 )
-#        print (samplesin)
         snakemake_in(
                 samplesin = samplesin,
                 outdir = args.outdir
