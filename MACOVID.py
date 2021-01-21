@@ -129,6 +129,7 @@ def main(command_line = None):
     mapreads.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
     mapreads.add_argument("-o", required = True, dest = "outdir")
     mapreads.add_argument("-m", required = True, dest = "manifest")
+    mapreads.add_argument("-l", required = False, dest = "local", action = "store_false")
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
     namechange.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
@@ -139,6 +140,7 @@ def main(command_line = None):
     rerun.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
     rerun.add_argument("-o", required = True, dest = "outdir")
     rerun.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
+    rerun.add_argument("-l", required = False, dest = "local", action = "store_false")
 
 ####################
 # parsing part
@@ -160,15 +162,19 @@ def main(command_line = None):
                 samplesin = samplesin,
                 outdir = args.outdir
                 )
-        os.system(f"snakemake --cluster 'sbatch' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
-
+        if not args.local:
+                os.system(f"snakemake --cores {args.cores} --use-conda")
+        else:
+                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
     elif args.mode == "namechanger":
+
        change_names(
                 sampledir = args.input_directory,
                 manifest = args.manifest,
                 reverse = args.rev 
                 )
     elif args.mode == "rerun":
+
         samplesin = define_input(
                 inputdir = args.input_directory,
                 )
@@ -176,8 +182,10 @@ def main(command_line = None):
                 samplesin = samplesin,
                 outdir = args.outdir
                 )
-        os.system(f"snakemake --cluster 'sbatch' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
-
+        if not args.local:
+                os.system(f"snakemake --cores {args.cores} --use-conda")
+        else:
+                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
     else:
         parser.print_usage()
 
