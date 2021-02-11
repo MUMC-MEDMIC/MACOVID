@@ -1,5 +1,6 @@
 # MACOVID
 Maastricht Covid processing pipeline
+Adapted from: https://github.com/dnieuw/ENA_SARS_Cov2_nanopore
 
 ## Requirements:
 
