@@ -23,16 +23,16 @@ rule trimming:
         """
         cutadapt -o {output} {input} -m 75 -j {threads}
         """
-
+#verander pipeline hier verder, eerst primer scheme toevoegen
 rule mapping:
     input:
         trim=OUTDIR + "{sample}_trimmed.fastq",
         ref="reference.fasta"
     output:
-        temp(OUTDIR + "{sample}_mapped.bam")
+        OUTDIR + "{sample}_mapped.bam"
     conda:
         "envs/refmap.yaml"
-    threads: 5
+    threads: 4
     shell:
         """
         minimap2 -Y -t {threads} -x map-ont -a {input.ref} {input.trim} | samtools view -bF 4 - | samtools sort -@ {threads} - > {output}
