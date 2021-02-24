@@ -21,7 +21,7 @@ rule trimming:
     threads: 4
     shell:
         """
-        cutadapt -u 30 -u -30 -o {output} {input} -m 75 -j {threads}
+        cutadapt -o {output} {input} -m 75 -j {threads}
         """
 
 rule mapping:
