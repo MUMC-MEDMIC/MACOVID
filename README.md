@@ -27,10 +27,10 @@ The content of the manifest.csv file:
 
 | barcode_ID | sample_ID |
 | ---------- |:---------:|
-| barcode1   | SRR01     |
-| barcode2   | SRR234    |
-| barcode4   |           |
-| barcode9   | SRR678_1  |
+| barcode01  | SRR01     |
+| barcode02  | SRR234    |
+| barcode04  |           |
+| barcode09  | SRR678_1  |
 | barcode32  | SRR0234   |
 
 
