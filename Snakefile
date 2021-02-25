@@ -23,11 +23,11 @@ rule trimming:
         """
         cutadapt -o {output} {input} -m 75 -j {threads}
         """
-#verander pipeline hier verder, eerst primer scheme toevoegen
+
 rule mapping:
     input:
-        trim=OUTDIR + "{sample}_trimmed.fastq",
-        ref="reference.fasta"
+        trim = OUTDIR + "{sample}_trimmed.fastq",
+        ref = "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.reference.fasta"
     output:
         OUTDIR + "{sample}_mapped.bam"
     conda:
@@ -42,7 +42,7 @@ rule bamIndex:
     input:
         OUTDIR + "{sample}_mapped.bam"
     output:
-        temp(OUTDIR + "{sample}_mapped.bam.bai")
+        OUTDIR + "{sample}_mapped.bam.bai"
     conda:
         "envs/refmap.yaml"
     threads: 1
@@ -51,30 +51,201 @@ rule bamIndex:
         samtools index -@ {threads} {input} 
         """
 
-rule bam2concensus:
+rule trimAlignment:
     input:
+        scheme = "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.scheme.bed"
         bamfile = OUTDIR + "{sample}_mapped.bam",
         sortfile = OUTDIR + "{sample}_mapped.bam.bai"
     output:
-        OUTDIR + "{sample}_consensus.fasta"
+        report = OUTDIR + "{sample}.alignreport.txt",
+        dropped = OUTDIR + "{sample}.alignreport.er",
+        trimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam",
+        primertrimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam"
     conda:
-        "envs/bam2concensus.yaml"
-    params: 30
+        "envs/artic.yaml"  
+    params: {sample}
     shell:
         """
-        bin/bam2consensus.py -i {input.bamfile} -o {output} -d {params} -g 1
+        align_trim --start --normalise 200 {input.scheme} --report {output.report} < {input.bamfile} 2> {output.dropped} | samtools sort -T {params} - -o {output.trimmedBamfile};
+        align_trim --normalise 200 {input.scheme} --remove-incorrect-pairs --report {output.report} < {input.bamfile} 2> {output.dropped} | samtools sort -T {params} - -o {output.primertrimmedBamfile}
         """
 
-rule align_consensus:
+rule indexTrimmedBam:
     input:
-        consen=OUTDIR + "{sample}_consensus.fasta",
-        ref="reference.fasta"
+        trimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam",
+        primertrimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam"
     output:
-        OUTDIR + "{sample}_final.fasta"
+        trimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam.bai",
+        primertrimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam.bai"
     conda:
-        "envs/alignconcensus.yaml"
+        "envs/refmap.yaml"
+    threads: 1
     shell:
         """
-        bin/align_to_ref.py -i {input.consen} -o {output} -r {input.ref} -n {wildcards.sample}
+        samtools index -@ {threads} {input.trimmedBamfile};
+        samtools index -@ {threads} {input.primertrimmedBamfile} 
         """
 
+rule splitPrimerpool:
+    input: OUTDIR + "{sample}.trimmed.rg.sorted.bam"
+    output:
+        pool1Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam",
+        pool2Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam",
+        pool1Index = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam.bai",
+        pool2Index = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam.bai"
+    conda:
+        "envs/refmap.yaml"
+    threads: 1
+    shell:
+        """
+        samtools view -b -r "nCoV-2019_1" {input} > {output.pool1Bam};
+        samtools index {output.pool1Bam};
+        samtools view -b -r "nCoV-2019_2" {input} > {output.pool2Bam};
+        samtools index {output.pool2Bam}
+        """
+
+rule medakaConsensus:
+    input:
+        pool1Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam",
+        pool2Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam"
+    output:
+        pool1Hdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.hdf",
+        pool2Hdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.hdf"
+    conda:
+        "envs/artic.yaml"
+    threads: 1
+    shell:
+        """
+        medaka consensus --chunk_len 400 --chunk_ovlp 200 {input.pool1Bam} {output.pool1Hdf};
+        medaka consensus --chunk_len 400 --chunk_ovlp 200 {input.pool2Bam} {output.pool2Hdf}
+        """
+
+rule medakaVariant:
+    input:
+        ref = "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.reference.fasta",  
+        pool1Hdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.hdf",
+        pool2Hdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.hdf"
+    output:
+        pool1Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.vcf",
+        pool2Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.vcf"
+    conda:
+        "envs/artic.yaml"
+    threads: 1
+    shell:
+        """
+        medaka variant {input.ref} {input.pool1Hdf} {output.pool1Vcf};
+        medaka variant {input.ref} {input.pool2Hdf} {output.pool2Vcf}
+        """
+
+rule vcfMerge:
+    input:
+        scheme = "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.scheme.bed",  
+        pool1Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.vcf",
+        pool2Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.vcf"
+    output:
+        mergedVcf = OUTDIR + "{sample}.merged.vcf",
+        mergedVcfGz = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.vcf.gz"
+    conda:
+        "envs/artic.yaml"
+    params: {sample}
+    threads: 1
+    shell:
+        """
+        artic_vcf_merge {params} {input.scheme} {input.pool1Vcf} {input.pool2Vcf};
+        bgzip -f {output.mergedVcf};
+        tabix -p vcf {output.mergedVcfGz}
+        """
+
+rule longshot:
+    input:
+        ref = "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.reference.fasta",  
+        primertrimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam",  
+        mergedVcfGz = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.vcf.gz"
+    output: OUTDIR + "{sample}.longshot.vcf"
+    conda:
+        "envs/artic.yaml"
+    threads: 1
+    shell:
+        """
+        longshot -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {input.ref} --out {output} --potential_variants {input.mergedVcfGz}
+        """
+
+rule vcfFilter:
+    input: OUTDIR + "{sample}.longshot.vcf
+    output: 
+        vcfPass = OUTDIR + "{sample}.pass.vcf",
+        vcfFail = OUTDIR + "{sample}.fail.vcf"
+    conda:
+        "envs/artic.yaml"
+    threads: 1
+    shell:
+        """
+        artic_vcf_filter --longshot {input} {output.vcfPass} {output.vcfFail}
+        """
+
+rule depthMask:
+    input:
+        ref = "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.reference.fasta",  
+        primertrimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam" 
+    output: OUTDIR + "{sample}.coverage_mask.txt"
+    conda:
+        "envs/artic.yaml"
+    params: 10
+    threads: 1
+    shell:
+        """
+        artic_make_depth_mask --depth {params} --store-rg-depths {input.ref} {input.primertrimmedBamfile} {output}
+        """
+
+rule plotAmpliconDepth:
+    input: "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.scheme.bed"
+    output: 
+        boxplot = OUTDIR + "{sample}-boxplot.png",
+        barplot = OUTDIR + "{sample}-barplot.png"
+    conda:
+        "envs/artic.yaml"
+    params: {sample}
+    threads: 1
+    shell:
+        """
+        artic_plot_amplicon_depth --primerScheme {input} --sampleID {params} --outFilePrefix {params} {params}*.depths
+        """
+
+rule preconsensus:
+    input: 
+        ref = "primer_schemes/nCoV-2019/Rotterdam/nCoV-2019.reference.fasta",  
+        mask = OUTDIR + "{sample}.coverage_mask.txt",
+        vcfPass = OUTDIR + "{sample}.pass.vcf",
+        vcfFail = OUTDIR + "{sample}.fail.vcf"
+
+    output: 
+        vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
+        preconsensus = OUTDIR + "{sample}.preconsensus.fasta"
+    conda:
+        "envs/artic.yaml"
+    params: {sample}
+    threads: 1
+    shell:
+        """
+        bgzip -f {input.vcfPass}
+        tabix -p vcf {output.vcfPassGz}
+        artic_mask {input.ref} {input.mask} {input.vcfFail} {output.preconsensus}
+        """
+
+rule consensus:
+    input: 
+        preconsensus = OUTDIR + "{sample}.preconsensus.fasta",  
+        vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
+        mask = OUTDIR + "{sample}.coverage_mask.txt",
+        vcfFail = OUTDIR + "{sample}.fail.vcf"
+
+    output: OUTDIR + "{sample}.consensus.fasta"
+    conda:
+        "envs/artic.yaml"
+    params: {sample}
+    threads: 1
+    shell:
+        """
+        bcftools consensus -f {input.preconsensus} {input.vcfPassGz} -m {input.mask} -o {output}
+        artic_fasta_header {output} {params}
+        """
