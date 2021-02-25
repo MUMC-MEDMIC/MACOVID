@@ -1,10 +1,9 @@
-name: alignconsensus
+name: artic
 channels:
  - bioconda
  - conda-forge
  - defaults
 dependencies:
  - python=3.6
- - biopython=1.78
- - argparse=1.4.0
+ - artic=1.1.3
 

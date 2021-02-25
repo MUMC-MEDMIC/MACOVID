@@ -1,9 +1,0 @@
-name: bam2consensus
-channels:
- - bioconda
- - conda-forge
- - defaults
-dependencies:
- - pysam=0.16.0.1
- - argparse=1.4.0
- - python=3.6

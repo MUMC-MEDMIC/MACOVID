@@ -1,7 +1,0 @@
-name: IQtree
-channels:
- - bioconda
- - conda-forge
- - defaults
-dependencies:
- - iqtree
