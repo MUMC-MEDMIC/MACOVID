@@ -165,9 +165,9 @@ def main(command_line = None):
                 outdir = args.outdir
                 )
         if not args.local:
-                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30")
+                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k")
         else:
-                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
+                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k")
     elif args.mode == "namechanger":
 
        change_names(
@@ -185,9 +185,9 @@ def main(command_line = None):
                 outdir = args.outdir
                 )
         if not args.local:
-                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30")
+                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k")
         else:
-                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda")
+                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k")
     else:
         parser.print_usage()
 
