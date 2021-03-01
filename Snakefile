@@ -6,7 +6,8 @@ OUTDIR = config['parameters']['outdir'] + "/"
 
 rule all:
     input:
-        expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES)
+        expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES),
+        expand(OUTDIR + "{sample}.helpfile2.txt", sample = SAMPLES)
 
 localrules: combine, 
 
@@ -139,7 +140,7 @@ rule medakaVariant:
         medaka variant {input.ref} {input.pool1Hdf} {output.pool1Vcf};
         medaka variant {input.ref} {input.pool2Hdf} {output.pool2Vcf}
         """
-
+        
 rule vcfMerge:
     input:
         scheme = "primer_schemes/nCoV-2019.scheme.bed",  
@@ -151,14 +152,11 @@ rule vcfMerge:
     threads: 1
     params: 
         prefix = "{sample}",
-        vcfMerge = os.getcwd() + "/" + "{sample}",
-        pool1 = "nCoV-2019_1:",
-        pool2 = "nCoV-2019_2:"
+        outDir = OUTDIR,
+        curDir = os.getcwd() + "/"
     shell:
         """
-        artic_vcf_merge {params.prefix} {input.scheme} {params.pool1}{input.pool1Vcf} {params.pool2}{input.pool2Vcf};
-        bgzip -f {params.vcfMerge}.merged.vcf;
-        tabix -p vcf {params.vcfMerge}.merged.vcf.gz;
+        bash vcfMerge.sh {input.scheme} {input.pool1Vcf} {input.pool2Vcf} {params.curDir} {params.outDir} {params.prefix};
         echo "ok" > {output}
         """
 
@@ -173,7 +171,7 @@ rule longshot:
         "envs/artic.yaml"
     threads: 1
     params: 
-        prefix = os.getcwd() + "/" + "{sample}"
+        prefix = OUTDIR + "{sample}"
     shell:
         """
         longshot -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {input.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
@@ -207,19 +205,23 @@ rule depthMask:
         artic_make_depth_mask --depth {params} --store-rg-depths {input.ref} {input.primertrimmedBamfile} {output}
         """
 
-#rule plotAmpliconDepth:
-#    input: "primer_schemes/nCoV-2019.scheme.bed"
-#    output: 
-#        boxplot = OUTDIR + "{sample}-boxplot.png",
-#        barplot = OUTDIR + "{sample}-barplot.png"
-#    conda:
-#        "envs/artic.yaml"
-#    threads: 1
-#    params: "{sample}"
-#    shell:
-#        """
-#        artic_plot_amplicon_depth --primerScheme {input} --sampleID {params} --outFilePrefix {params} {params}*.depths
-#        """
+rule plotAmpliconDepth:
+    input: 
+        scheme = "primer_schemes/nCoV-2019.scheme.bed",
+        helpfile = OUTDIR + "{sample}.helpfile.txt"
+    output: OUTDIR + "{sample}.helpfile2.txt"
+    conda:
+        "envs/artic.yaml"
+    threads: 1
+    params: 
+         prefix = "{sample}",
+         outDir = OUTDIR,
+         curDir = os.getcwd() + "/"
+    shell:
+        """
+        bash plotAmplicon.sh {input.scheme} {params.prefix} {params.curDir} {params.outDir};
+        echo "ok" > {output}
+        """
 
 rule preconsensus:
     input: 
@@ -237,6 +239,7 @@ rule preconsensus:
     shell:
         """
         bgzip -f {input.vcfPass};
+        sleep 5s;
         tabix -p vcf {output.vcfPassGz};
         artic_mask {input.ref} {input.mask} {input.vcfFail} {output.preconsensus}
         """
