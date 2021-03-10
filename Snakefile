@@ -239,7 +239,7 @@ rule preconsensus:
     shell:
         """
         bgzip -f {input.vcfPass};
-        sleep 5s;
+        sleep 15s;
         tabix -p vcf {output.vcfPassGz};
         artic_mask {input.ref} {input.mask} {input.vcfFail} {output.preconsensus}
         """
