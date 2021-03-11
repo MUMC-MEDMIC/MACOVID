@@ -3,6 +3,7 @@
 configfile: "config/config.yaml"
 SAMPLES = config['SAMPLES']
 OUTDIR = config['parameters']['outdir'] + "/"
+COVERAGE = config['parameters']['coverage']
 
 rule all:
     input:
@@ -198,7 +199,7 @@ rule depthMask:
     output: OUTDIR + "{sample}.coverage_mask.txt"
     conda:
         "envs/artic.yaml"
-    params: 10
+    params: COVERAGE
     threads: 1
     shell:
         """
@@ -239,7 +240,7 @@ rule preconsensus:
     shell:
         """
         bgzip -f {input.vcfPass};
-        sleep 15s;
+        sleep 45s;
         tabix -p vcf {output.vcfPassGz};
         artic_mask {input.ref} {input.mask} {input.vcfFail} {output.preconsensus}
         """
