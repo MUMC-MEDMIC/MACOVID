@@ -1,5 +1,4 @@
 """
-        ref = "primer_schemes/nCoV-2019.reference.fasta",  
 Pipeline to analyse COVID variants
 MACOVID version 2.0
 MUMC+
@@ -9,12 +8,17 @@ configfile: "config/config.yaml"
 SAMPLES = config['SAMPLES']
 OUTDIR = config['parameters']['outdir'] + "/"
 MERGE =  config['parameters']['merge_files']
+COVERAGE = config['parameters']['coverage']
+
 
 rule all:
     input:
+        expand(OUTDIR + "{sample}-barplot.png", sample = SAMPLES),
+        expand(OUTDIR + "{sample}-boxplot.png",sample = SAMPLES),
         expand(OUTDIR + MERGE + "final.fasta")
 
-localrules: combine, 
+localrules: finalFasta, 
+
 
 rule trimming:
     input:
@@ -28,6 +32,7 @@ rule trimming:
         """
         cutadapt -o {output} {input} -m 75 -j {threads}
         """
+
 
 rule mapping:
     input:
@@ -44,6 +49,7 @@ rule mapping:
         minimap2 -Y -t {threads} -x map-ont -a {params.ref} {input.trim} | samtools view -bF 4 - | samtools sort -@ {threads} - > {output}
         """
 
+
 rule bamIndex:
     input:
         OUTDIR + "{sample}_mapped.bam"
@@ -56,6 +62,7 @@ rule bamIndex:
         """
         samtools index -@ {threads} {input} 
         """
+
 
 rule trimAlignment:
     input:
@@ -77,6 +84,7 @@ rule trimAlignment:
         align_trim --normalise 200 {params.scheme} --remove-incorrect-pairs --report {output.report} < {input.bamfile} 2> {output.dropped} | samtools sort -T {params.prefix} - -o {output.primertrimmedBamfile}
         """
 
+
 rule indexTrimmedBam:
     input:
         trimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam",
@@ -92,6 +100,7 @@ rule indexTrimmedBam:
         samtools index -@ {threads} {input.trimmedBamfile};
         samtools index -@ {threads} {input.primertrimmedBamfile} 
         """
+
 
 rule splitPrimerpool:
     input: 
@@ -109,6 +118,7 @@ rule splitPrimerpool:
         samtools index {output.poolBam}
         """
 
+
 rule medakaConsensus:
     input:
         poolBam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam",
@@ -122,6 +132,7 @@ rule medakaConsensus:
         """
         medaka consensus --chunk_len 400 --chunk_ovlp 200 {input.poolBam} {output.poolHdf};
         """
+
 
 rule medakaVariant:
     input:
@@ -138,6 +149,7 @@ rule medakaVariant:
         medaka variant {params.ref} {input.poolHdf} {output.poolVcf};
         """
         
+
 rule vcfMerge:
     input:
         pool1Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.vcf",
@@ -158,6 +170,7 @@ rule vcfMerge:
         cd -
         """
 
+
 rule vcfMergeTabix:
     input:
         mergedVcf = OUTDIR + "{sample}.merged.vcf"
@@ -172,6 +185,7 @@ rule vcfMergeTabix:
         sleep 5s;
         tabix -p vcf {output.mergedZip}
         """
+
 
 rule longshot:
     input:
@@ -190,6 +204,7 @@ rule longshot:
         longshot -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
         """
 
+
 rule vcfFilter:
     input: OUTDIR + "{sample}.longshot.vcf"
     output: 
@@ -203,6 +218,7 @@ rule vcfFilter:
         artic_vcf_filter --longshot {input} {output.vcfPass} {output.vcfFail}
         """
 
+
 rule depthMask:
     input:
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
@@ -211,16 +227,18 @@ rule depthMask:
     conda:
         "envs/artic.yaml"
     params: 
-        number = 10,
+        coverage = COVERAGE,
         ref = os.getcwd() + "/primer_schemes/nCoV-2019.reference.fasta"
     threads: 1
     shell:
         """
-        artic_make_depth_mask --depth {params.number} --store-rg-depths {params.ref} {input.primertrimmedBamfile} {output}
+        artic_make_depth_mask --depth {params.coverage} --store-rg-depths {params.ref} {input.primertrimmedBamfile} {output}
         """
+
 
 rule plotAmpliconDepth:
     input: 
+        maskdepth = OUTDIR + "{sample}.coverage_mask.txt",
         mergedTabix = OUTDIR + "{sample}.merged.vcf.gz.tbi"
     output:
         barplot = OUTDIR + "{sample}-barplot.png",
@@ -239,11 +257,12 @@ rule plotAmpliconDepth:
         cd -
         """
 
+
 rule preconsensus:
     input: 
         mask = OUTDIR + "{sample}.coverage_mask.txt",
         vcfPass = OUTDIR + "{sample}.pass.vcf",
-        vcfFail = OUTDIR + "{sample}.fail.vcf"
+        vcfFail = OUTDIR + "{sample}.fail.vcf",
     output: 
         vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
         preconsensus = OUTDIR + "{sample}.preconsensus.fasta"
@@ -255,10 +274,11 @@ rule preconsensus:
     shell:
         """
         bgzip -f {input.vcfPass};
-        sleep 5s;
+        sleep 45s;
         tabix -p vcf {output.vcfPassGz};
         artic_mask {params.ref} {input.mask} {input.vcfFail} {output.preconsensus}
         """
+
 
 rule consensus:
     input: 
@@ -278,9 +298,10 @@ rule consensus:
         artic_fasta_header {output} {params}
         """
 
+
 rule finalFasta:
     input:
-         expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES)
+        expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES)
     output: OUTDIR + MERGE + "final.fasta"
     shell:
         """

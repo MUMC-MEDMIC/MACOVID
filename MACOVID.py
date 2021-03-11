@@ -109,15 +109,15 @@ def change_names(sampledir, manifest, reverse):
 # Snakemake pipeline for generating consensus fastas
 ###################
 
-def snakemake_in(samplesin, folderin, outdir):
+def snakemake_in(samplesin, folderin,  outdir, coverage):
 
-    print (samplesin)
     ## Sample dictionary
     samplesdic = {}
     ## parameter for the ourDir
     samplesdic['parameters'] = {}
     samplesdic['parameters']['merge_files'] = folderin
     samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
+    samplesdic['parameters']["coverage"] = coverage
     samplesdic["SAMPLES"] = {}
     
     # generate the samples dictionary as input for snakemake 
@@ -148,6 +148,7 @@ def main(command_line = None):
     mapreads.add_argument("-o", required = True, dest = "outdir")
     mapreads.add_argument("-m", required = True, dest = "manifest")
     mapreads.add_argument("-l", required = False, dest = "local", action = "store_false")
+    mapreads.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
     namechange.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
@@ -159,6 +160,7 @@ def main(command_line = None):
     rerun.add_argument("-o", required = True, dest = "outdir")
     rerun.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
     rerun.add_argument("-l", required = False, dest = "local", action = "store_false")
+    rerun.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
 
 ####################
 # parsing part
@@ -181,7 +183,8 @@ def main(command_line = None):
         snakemake_in(
                 samplesin = samplesIn,
                 folderin = folderLoc,
-                outdir = args.outdir
+                outdir = args.outdir,
+                coverage = args.coverage
                 )
         if not args.local:
                 print ("Running MACOVID locally")
@@ -203,7 +206,8 @@ def main(command_line = None):
                 )
         snakemake_in(
                 samplesin = samplesin,
-                outdir = args.outdir
+                outdir = args.outdir,
+                coverage = args.coverage
                 )
         if not args.local:
                 print ("Re-running MACOVID locally")
