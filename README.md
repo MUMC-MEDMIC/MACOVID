@@ -1,29 +1,37 @@
 # MACOVID
-Maastricht Covid processing pipeline
+Covid processing pipeline (Paragraph of explaination)
 
 
-Adapted from: https://github.com/dnieuw/ENA_SARS_Cov2_nanopore
+## Getting Started
 
-## Requirements:
+To get the pipeline up and running you need to following.
 
-### Python packages:
 
-shutil
-argparse
-yaml
-os
-pandas
-re
-glob
-sys
+### Prerequisites
 
-and Anaconda/Miniconda
+```
+Anaconda/Miniconda:
+Git
+```
 
-## How to run
+### Installing
 
-### Name changer
+```
+git clone https://github.com/MUMC-MEDMIC/MACOVID.git
+```
 
-The content of the manifest.csv file:
+## Create and activate the main environment
+
+```
+conda env create -f mainEnvs.yaml
+conda activate envsMacovid
+```
+
+## Running MACOVID
+
+### Manifest input
+
+The manifest file could either be tab, comma or semicolon seperated. This is how the table should be:
 
 | barcode_ID | sample_ID |
 | ---------- |:---------:|
@@ -38,6 +46,7 @@ The content of the manifest.csv file:
 
 Requires input directory, manifest file (csv), output directory and the number of cores for running.
 MACOVID scans for fastq files in the input directory. Found fastq files are automatically renamed from barcode to sample IDs based on information in the manifest. Fasta and concensus files are generated in the output directory. Local run use -l command (optional).
+
 ```
 python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X -l
 ```
@@ -64,3 +73,4 @@ Note: The program makes use of Snakemake so if the output directory contains the
 python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l
 ```
 
+Adapted from: https://github.com/dnieuw/ENA_SARS_Cov2_nanopore

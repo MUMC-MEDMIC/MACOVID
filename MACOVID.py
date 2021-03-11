@@ -21,7 +21,7 @@ def file_name_generator(filepath):
 # Define the input files
 ###################
 
-def define_input(inputdir):
+def define_inDir(inputdir):
     ## Input dir treated as list. Remove square brackets
     if bool(re.search("\[*\]", str(inputdir))):
          inputdir = str(inputdir)[2:-2]
@@ -30,8 +30,11 @@ def define_input(inputdir):
     if str(inputdir)[-1] == "/":
         inputdir = inputdir[:-1]
 
+    return (inputdir)
+    
+def define_inFastq(inputDir):
     ## Path of folder with fastq files
-    inputPath = get_absolute_path(inputdir)
+    inputPath = get_absolute_path(inputDir)
 
     ## Fastq files
     fastqFiles = glob.glob(f"{inputPath}/*fastq*")
@@ -60,48 +63,60 @@ def change_names(sampledir, manifest, reverse):
         pos = 0
     else:
         pos = 1 
-    ## Read csv files:
+
+    ## Read csv files into nested doct:
     names = pd.read_csv(manifest, index_col = pos, sep = ",|;|\t", engine = 'python').dropna().to_dict()
 
-#    print (names)
-    ## Key is the sample_ID in this nested dict
+    ## Extract keys (sample_ID) from manifest file
     key = [x for x in names.keys()][0]
+
+    ## Extract the values (barcodes and new names) from dict
     barcodes = names[key]
 
-#    print (barcodes)
+    ## fastq folder
+    folderLoc = define_inDir(sampledir)
+
     ## Identify fastq files
-    fastqFiles = define_input(sampledir)
-#    print (fastqFiles)
+    fastqFiles = define_inFastq(folderLoc)
 
     runFiles = []
-    ## Loop through fastq file found
-    for q in fastqFiles:
-#        print (q)
-        ## Loop through barcode dictionary
-        for k,v in barcodes.items():
-#            print (q,k,v)
-            basename = q.split("/")[-1].split(".fastq")[0]
-#            print ("fastq",basename,k, v)
-            if basename == k:
-#                print (basename, v)
-                location = os.path.dirname(q)
-#                print (location)
-                newFile = location + "/" + f"{v}.fastq"
-#                print (newFile)
-                shutil.move(q, newFile)
+
+    ## Incase of float converts back to string
+    formatNumber = lambda n: int(n) if isinstance(n,float) and n.is_integer() else n
+
+    ## Loop through found fastq files
+    for fstq in fastqFiles:
+        ## Check through barcode dictionary
+        for bark,barv in barcodes.items():
+            
+            basename = fstq.split("/")[-1].split(".fastq")[0]
+            ## Basename found on the barcode dictionary
+            if basename == bark:
+                ## Solution if the new name is numeric or float
+                if barv.isnumeric():
+                    barv = formatNumber(barv)
+
+                ## Rename of found fastq file
+                location = os.path.dirname(fstq)
+                newFile = location + "/" + f"{barv}.fastq"
+                shutil.move(fstq, newFile)
+                ## Writes run files to new list
                 runFiles.append(newFile)
 
     return runFiles
+
 ###################
 # Snakemake pipeline for generating consensus fastas
 ###################
 
-def snakemake_in(samplesin, outdir):
+def snakemake_in(samplesin, folderin, outdir):
 
+    print (samplesin)
     ## Sample dictionary
     samplesdic = {}
     ## parameter for the ourDir
     samplesdic['parameters'] = {}
+    samplesdic['parameters']['merge_files'] = folderin
     samplesdic['parameters']["outdir"] = get_absolute_path(outdir)
     samplesdic["SAMPLES"] = {}
     
@@ -153,20 +168,26 @@ def main(command_line = None):
     if args.mode == "mapreads":
         ## Set running location where MACOVID is located
         os.chdir(f"{locationrepo}")
-
-        ## Change name according to manifest
-        samplesin = change_names(
+        ## Identify fastq input files, change name according to manifest
+        samplesIn = change_names(
                 sampledir = args.input_directory,
                 manifest = args.manifest,
                 reverse ="FALSE",
                 )
+
+        ## fastq folder
+        folderLoc = define_inDir(inputdir = args.input_directory)
+
         snakemake_in(
-                samplesin = samplesin,
+                samplesin = samplesIn,
+                folderin = folderLoc,
                 outdir = args.outdir
                 )
         if not args.local:
+                print ("Running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k")
         else:
+                print ("Running MACOVID on the cluster")
                 os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k")
     elif args.mode == "namechanger":
 
@@ -185,8 +206,10 @@ def main(command_line = None):
                 outdir = args.outdir
                 )
         if not args.local:
+                print ("Re-running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k")
         else:
+                print ("Re-running MACOVID on the cluster")
                 os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k")
     else:
         parser.print_usage()
