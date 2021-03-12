@@ -107,15 +107,19 @@ rule splitPrimerpool:
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai"
     output:
-        poolBam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam",
-        poolIndex = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam.bai"
+        pool1Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam",
+        pool2Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam",
+        pool1Index = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam.bai",
+        pool2Index = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam.bai"
     conda:
         "envs/refmap.yaml"
     threads: 1
     shell:
         """
-        samtools view -b -r "nCoV-2019_1" {input.primertrimmedBamfile} > {output.poolBam};
-        samtools index {output.poolBam}
+        samtools view -b -r "nCoV-2019_1" {input.primertrimmedBamfile} > {output.pool1Bam};
+        samtools index {output.pool1Bam};
+        samtools view -b -r "nCoV-2019_2" {input.primertrimmedBamfile} > {output.pool2Bam};
+        samtools index {output.pool2Bam}
         """
 
 

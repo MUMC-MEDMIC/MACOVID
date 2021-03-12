@@ -188,10 +188,10 @@ def main(command_line = None):
                 )
         if not args.local:
                 print ("Running MACOVID locally")
-                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k")
+                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
         else:
                 print ("Running MACOVID on the cluster")
-                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k")
+                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
     elif args.mode == "namechanger":
 
        change_names(
@@ -211,10 +211,10 @@ def main(command_line = None):
                 )
         if not args.local:
                 print ("Re-running MACOVID locally")
-                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k")
+                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
         else:
                 print ("Re-running MACOVID on the cluster")
-                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k")
+                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
     else:
         parser.print_usage()
 

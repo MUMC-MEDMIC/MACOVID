@@ -9,8 +9,10 @@ slurm-*
 *.swp
 *.fastq
 MACOVID_manifest.csv
+bashtest.sh
 
 # pipeline
 results/*
 config/*
 temp/*
+outemp/*
