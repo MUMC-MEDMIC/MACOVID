@@ -45,21 +45,24 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
 ### Core run
 
 
-**-i** Input directory  
-**-m** Manifest file  
-**-o** Output directory  
-**--c** Number of cores use  
-**-cov** Set coverage (Default 30)  
-**-l** Run locally  
+ **-i** Input directory  
+ **-m** Manifest file  
+ **-o** Output directory  
+ **--c** Number of cores use  
+ **--cov** Set coverage (Default 30)  
+ **-l** Run locally  
 
 
 MACOVID scans for fastq files in the input directory. Please avoid space and symbols in the input folder. Found fastq files are automatically renamed based on information from the manifest file. The output directory must be specified for the results. All the final fasta files are concatenated into a single file using the name of the input folder. For locally run use -l command (optional).
 
 ```
-python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X -l
+python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X -l --cov
 ```
 
-### Standalone renaming
+### Files renaming
+
+ **-i** Input directory  
+ **-rev** Reverse name changed
 
 To rename from barcode to the sample id based on the manifest file:
 
@@ -73,12 +76,21 @@ To reverse sample ID back to barcode based on the manifest file:
 python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 ```
 
-To rerun samples from specific folder. It is possible to run files in gz format. The output directory and number of cores must be specify. Local run use -l command (optional).
+### Rerun samples
+ 
+ **-i** Input directory  
+ **-o** Output directory  
+ **--c** Number of cores use  
+ **--cov** Set coverage (Default 30)  
+ **-l** Run locally  
+
+
+To rerun samples from specific folder. Input files could be in gz format. The output directory and number of cores must be specify. Local run use -l command (optional).
 
 Note: The program makes use of Snakemake so if the output directory contains the final files of the rerun, those files will not be analysis. Solution: remove old files or pick a new output directory. 
 
 ```
-python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l
+python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l -cov 30
 ```
 
 Adapted from: https://github.com/dnieuw/ENA_SARS_Cov2_nanopore
