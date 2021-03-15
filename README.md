@@ -61,7 +61,7 @@ python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_
 
 ### Files renaming
 
- **-i** Input directory  
+ -i **Input directory**  
  **-rev** Reverse name changed
 
 To rename from barcode to the sample id based on the manifest file:
