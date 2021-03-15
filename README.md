@@ -44,6 +44,17 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
 
 ### Core run
 
+```
+
+**-i** ***Input directory***
+**-m** ***Manifest file***
+**-o** ***Output directory***
+**--c** ***Number of cores use***
+**-cov** ***Set coverage (Default 30)***
+**-l** ***Run locally***
+
+```
+
 Requires input directory, manifest file (csv), output directory and the number of cores for running.
 MACOVID scans for fastq files in the input directory. Found fastq files are automatically renamed from barcode to sample IDs based on information in the manifest. Fasta and concensus files are generated in the output directory. Local run use -l command (optional).
 
