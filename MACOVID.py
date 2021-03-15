@@ -199,16 +199,23 @@ def main(command_line = None):
                 manifest = args.manifest,
                 reverse = args.rev 
                 )
+    ## Rerun fastq files from specific folder
     elif args.mode == "rerun":
 
-        samplesin = define_input(
-                inputdir = args.input_directory,
-                )
+        ## Identify fastq folder
+        folderLoc = define_inDir(inputdir = args.input_directory)
+
+        ## Detect fastq files inside folder
+        samplesIn = define_inFastq(inputDir = folderLoc)
+
+        ## Rerun commands
         snakemake_in(
-                samplesin = samplesin,
+                samplesin = samplesIn,
+                folderin = folderLoc,
                 outdir = args.outdir,
                 coverage = args.coverage
                 )
+
         if not args.local:
                 print ("Re-running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
