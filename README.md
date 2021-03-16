@@ -9,8 +9,8 @@ Maastricht MUMC+ Covid pipeline, adapted from [ENA_SARS_Cov2_nanopore](https://g
 Required the following to be installed
 
 ```
-Anaconda/Miniconda:
-git
+- Anaconda/Miniconda
+- git
 ```
 
 #### Step 1: Obtain a copy of this workflow
