@@ -2,17 +2,18 @@
 Maastricht MUMC+ Covid pipeline, adapted from [ENA_SARS_Cov2_nanopore](https://github.com/dnieuw/ENA_SARS_Cov2_nanopore) and [Artic-ncovid2019](https://github.com/artic-network/artic-ncov2019).
 
 
-#### Step 1: Obtain a copy of this workflow
+## Setting up
 
-##### Prerequisites
+#### Prerequisites
 
-1. Required the following to be installed
+Required the following to be installed
 
 ```
 Anaconda/Miniconda:
 git
 ```
-2. Installing
+
+#### Step 1: Obtain a copy of this workflow
 
 [Clone](https://github.com/MUMC-MEDMIC/MACOVID.git) the Macovid into your local system, where you want to do the analysis.
 
@@ -62,8 +63,8 @@ python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_
 
 ### Files renaming
 
- -i **Input directory**  
- **-rev** Reverse name changed
+ -i Input directory  
+ -rev Reverse name changed
 
 To rename from barcode to the sample id based on the manifest file:
 
@@ -79,11 +80,11 @@ python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 
 ### Rerun samples
  
- **-i** Input directory  
- **-o** Output directory  
- **--c** Number of cores use  
- **--cov** Set coverage (Default 30)  
- **-l** Run locally  
+ -i Input directory  
+ -o Output directory  
+ --c Number of cores use  
+ --cov Set coverage (Default 30)  
+ -l Run locally  
 
 
 To rerun samples from specific folder. Input files could be in gz format. The output directory and number of cores must be specify. Local run use -l command (optional).
@@ -93,5 +94,3 @@ Note: The program makes use of Snakemake so if the output directory contains the
 ```
 python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l -cov 30
 ```
-
-Adapted from: https://github.com/dnieuw/ENA_SARS_Cov2_nanopore
