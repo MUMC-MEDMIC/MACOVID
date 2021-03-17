@@ -8,3 +8,4 @@ dependencies:
  - pyyaml=5.1.2
  - pandas=1.0.3
  - snakemake=5.13.0
+ - cutadapt=2.5

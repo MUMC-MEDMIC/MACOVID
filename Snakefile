@@ -14,11 +14,8 @@ COVERAGE = config['parameters']['coverage']
 rule all:
     input:
         expand(OUTDIR + "{sample}-barplot.png", sample = SAMPLES),
-        expand(OUTDIR + "{sample}-boxplot.png",sample = SAMPLES),
-        expand(OUTDIR + MERGE + "final.fasta")
-
-localrules: finalFasta, 
-
+        expand(OUTDIR + "{sample}-boxplot.png", sample = SAMPLES),
+        expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES),
 
 rule trimming:
     input:
@@ -300,14 +297,4 @@ rule consensus:
         """
         bcftools consensus -f {input.preconsensus} {input.vcfPassGz} -m {input.mask} -o {output};
         artic_fasta_header {output} {params}
-        """
-
-
-rule finalFasta:
-    input:
-        expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES)
-    output: OUTDIR + MERGE + "final.fasta"
-    shell:
-        """
-        cat {input} > {output}
         """
