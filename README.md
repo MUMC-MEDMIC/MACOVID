@@ -1,26 +1,29 @@
 # MACOVID
-Covid processing pipeline (Paragraph of explaination)
+Maastricht MUMC+ Covid pipeline, adapted from [ENA_SARS_Cov2_nanopore](https://github.com/dnieuw/ENA_SARS_Cov2_nanopore) and [Artic-ncovid2019](https://github.com/artic-network/artic-ncov2019).
 
 
-## Getting Started
+## Setting up
 
-To get the pipeline up and running you need to following.
+#### Prerequisites
 
-
-### Prerequisites
+Required the following to be installed
 
 ```
-Anaconda/Miniconda:
-Git
+- Anaconda/Miniconda
+- git
 ```
 
-### Installing
+#### Step 1: Obtain a copy of this workflow
+
+[Clone](https://github.com/MUMC-MEDMIC/MACOVID.git) the Macovid into your local system, where you want to do the analysis.
 
 ```
 git clone https://github.com/MUMC-MEDMIC/MACOVID.git
 ```
 
-## Create and activate the main environment
+#### Step 2: Configure workflow
+
+Configure the workflow by creating and activating the environment.
 
 ```
 conda env create -f mainEnvs.yaml
@@ -42,15 +45,14 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
 | barcode32  | SRR0234   |
 
 
-### Core run
+### Analysis using manifest file
 
-
- **-i** Input directory  
- **-m** Manifest file  
- **-o** Output directory  
- **--c** Number of cores use  
- **--cov** Set coverage (Default 30)  
- **-l** Run locally  
+ -i Input directory  
+ -m Manifest file  
+ -o Output directory  
+ --c Number of cores use  
+ --cov Set coverage (Default 30)  
+ -l Run locally  
 
 
 MACOVID scans for fastq files in the input directory. Please avoid space and symbols in the input folder. Found fastq files are automatically renamed based on information from the manifest file. The output directory must be specified for the results. All the final fasta files are concatenated into a single file using the name of the input folder. For locally run use -l command (optional).
@@ -61,8 +63,8 @@ python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_
 
 ### Files renaming
 
- -i **Input directory**  
- **-rev** Reverse name changed
+ -i Input directory  
+ -rev Reverse name changed
 
 To rename from barcode to the sample id based on the manifest file:
 
@@ -78,11 +80,11 @@ python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 
 ### Rerun samples
  
- **-i** Input directory  
- **-o** Output directory  
- **--c** Number of cores use  
- **--cov** Set coverage (Default 30)  
- **-l** Run locally  
+ -i Input directory  
+ -o Output directory  
+ --c Number of cores use  
+ --cov Set coverage (Default 30)  
+ -l Run locally  
 
 
 To rerun samples from specific folder. Input files could be in gz format. The output directory and number of cores must be specify. Local run use -l command (optional).
@@ -92,5 +94,3 @@ Note: The program makes use of Snakemake so if the output directory contains the
 ```
 python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l -cov 30
 ```
-
-Adapted from: https://github.com/dnieuw/ENA_SARS_Cov2_nanopore
