@@ -50,7 +50,7 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
     -i Input directory  
     -m Manifest file  
     -o Output directory  
-    --c Number of cores use  
+    --cores Number of threads   
     --cov min coverage per base (default: 30)  
     -l Run locally  
     --trim_start trim start of consensus that is not sequenced (default: 54)  
@@ -84,7 +84,7 @@ python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
  
     -i Input directory  
     -o Output directory  
-    --c Number of cores use  
+    --cores Number of threads 
     --cov Set coverage (Default 30)  
     -l Run locally  
     --trim_start trim start of consensus that is not sequenced (default: 54)  
