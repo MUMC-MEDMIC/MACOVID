@@ -93,8 +93,8 @@ python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 
 To rerun samples from specific folder. Input files could be in gz format. The output directory and number of cores must be specify. Local run use -l command (optional).
 
-Note: The program makes use of Snakemake so if the output directory contains the final files of the rerun, those files will not be analysis. Solution: remove old files or pick a new output directory. 
-
 ```
 python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l -cov 30
 ```
+
+Note: The program makes use of Snakemake so if the output directory contains the final files of the rerun, those files will not be analysis. Solution: remove old files or pick a new output directory. 
