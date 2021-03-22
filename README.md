@@ -1,5 +1,5 @@
 # MACOVID
-Maastricht MUMC+ Covid pipeline, adapted from [ENA_SARS_Cov2_nanopore](https://github.com/dnieuw/ENA_SARS_Cov2_nanopore) and [Artic-ncovid2019](https://github.com/artic-network/artic-ncov2019).
+Maastricht MUMC+ Covid pipeline, adapted from and [Artic-ncovid2019](https://github.com/artic-network/artic-ncov2019).
 
 
 ## Setting up
@@ -47,12 +47,12 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
 
 ### Analysis using manifest file
 
- -i Input directory  
- -m Manifest file  
- -o Output directory  
- --c Number of cores use  
- --cov Set coverage (Default 30)  
- -l Run locally  
+  -i Input directory  
+  -m Manifest file  
+  -o Output directory  
+  --c Number of cores use  
+  --cov Set coverage (Default 30)  
+  -l Run locally  
 
 
 MACOVID scans for fastq files in the input directory. Please avoid space and symbols in the input folder. Found fastq files are automatically renamed based on information from the manifest file. The output directory must be specified for the results. All the final fasta files are concatenated into a single file using the name of the input folder. For locally run use -l command (optional).
