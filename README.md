@@ -51,8 +51,10 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
     -m Manifest file  
     -o Output directory  
     --c Number of cores use  
-    --cov Set coverage (Default 30)  
+    --cov min coverage per base (default: 30)  
     -l Run locally  
+    --trim_start trim start of consensus that is not sequenced (default: 54)  
+    --trim_end trim end of consensus that is not sequenced (default: 79)  
 
 
 MACOVID scans for fastq files in the input directory. Please avoid space and symbols in the input folder. Found fastq files are automatically renamed based on information from the manifest file. The output directory must be specified for the results. All the final fasta files are concatenated into a single file using the name of the input folder. For locally run use -l command (optional).
@@ -85,6 +87,8 @@ python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
     --c Number of cores use  
     --cov Set coverage (Default 30)  
     -l Run locally  
+    --trim_start trim start of consensus that is not sequenced (default: 54)  
+    --trim_end trim end of consensus that is not sequenced (default: 79)
 
 
 To rerun samples from specific folder. Input files could be in gz format. The output directory and number of cores must be specify. Local run use -l command (optional).
