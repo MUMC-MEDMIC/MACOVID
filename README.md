@@ -26,8 +26,8 @@ git clone https://github.com/MUMC-MEDMIC/MACOVID.git
 Configure the workflow by creating and activating the environment.
 
 ```
-conda env create -f mainEnvs.yaml
-conda activate envsMacovid
+conda env create -f macovid.yaml
+conda activate macovid
 ```
 
 ## Running MACOVID
