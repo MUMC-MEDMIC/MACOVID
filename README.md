@@ -63,8 +63,8 @@ python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_
 
 ### Files renaming
 
- -i Input directory  
- -rev Reverse name changed
+    -i Input directory  
+    -rev Reverse name changed
 
 To rename from barcode to the sample id based on the manifest file:
 
@@ -80,11 +80,11 @@ python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 
 ### Rerun samples
  
- -i Input directory  
- -o Output directory  
- --c Number of cores use  
- --cov Set coverage (Default 30)  
- -l Run locally  
+    -i Input directory  
+    -o Output directory  
+    --c Number of cores use  
+    --cov Set coverage (Default 30)  
+    -l Run locally  
 
 
 To rerun samples from specific folder. Input files could be in gz format. The output directory and number of cores must be specify. Local run use -l command (optional).
