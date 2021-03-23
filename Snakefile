@@ -172,19 +172,23 @@ rule vcfMerge:
         """
 
 
-rule vcfMergeTabix:
-    input:
-        mergedVcf = OUTDIR + "{sample}.merged.vcf"
-    output:
-        mergedZip = OUTDIR + "{sample}.merged.vcf.gz",
-        mergedTabix = OUTDIR + "{sample}.merged.vcf.gz.tbi"
-    conda:
-        "envs/artic.yaml"
+rule vcfBGzip:
+    input: OUTDIR + "{sample}.merged.vcf"
+    output: OUTDIR + "{sample}.merged.vcf.gz"
+    conda: "envs/artic.yaml"
     shell:
         """
-        bgzip -f {input};
-        sleep 5s;
-        tabix -p vcf {output.mergedZip}
+        bgzip -f {input}
+        """
+
+
+rule vcfMergeTabix:
+    input: OUTDIR + "{sample}.merged.vcf.gz"
+    output: OUTDIR + "{sample}.merged.vcf.gz.tbi"
+    conda: "envs/artic.yaml"
+    shell:
+        """
+        tabix -p vcf {input}
         """
 
 
@@ -259,13 +263,22 @@ rule plotAmpliconDepth:
         """
 
 
+rule vcfPassBGzip:
+    input: OUTDIR + "{sample}.pass.vcf"
+    output: OUTDIR + "{sample}.pass.vcf.gz"
+    conda: "envs/artic.yaml"
+    shell:
+        """
+        bgzip -f {input}
+        """
+
+
 rule preconsensus:
     input: 
         mask = OUTDIR + "{sample}.coverage_mask.txt",
-        vcfPass = OUTDIR + "{sample}.pass.vcf",
-        vcfFail = OUTDIR + "{sample}.fail.vcf",
-    output: 
         vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
+        vcfFail = OUTDIR + "{sample}.fail.vcf"
+    output: 
         preconsensus = OUTDIR + "{sample}.preconsensus.fasta"
     conda:
         "envs/artic.yaml"
@@ -274,9 +287,7 @@ rule preconsensus:
         ref = os.getcwd() + "/primer_schemes/nCoV-2019.reference.fasta"
     shell:
         """
-        bgzip -f {input.vcfPass};
-        sleep 45s;
-        tabix -p vcf {output.vcfPassGz};
+        tabix -p vcf {input.vcfPassGz};
         artic_mask {params.ref} {input.mask} {input.vcfFail} {output.preconsensus}
         """
 
