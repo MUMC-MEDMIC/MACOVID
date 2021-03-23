@@ -223,7 +223,7 @@ def main(command_line = None):
                 outdir = args.outdir,
                 coverage = args.coverage
                 )
-
+ 
         if not args.local:
                 print ("Re-running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
