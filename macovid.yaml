@@ -1,4 +1,4 @@
-name: envsMacovid
+name: macovid
 channels:
  - bioconda
  - conda-forge
