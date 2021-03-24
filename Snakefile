@@ -9,6 +9,8 @@ SAMPLES = config['SAMPLES']
 OUTDIR = config['parameters']['outdir'] + "/"
 MERGE =  config['parameters']['merge_files']
 COVERAGE = config['parameters']['coverage']
+SCHEMEDIR = config['parameters']['scheme'] + "/"
+SCHEMEPREFIX = config['parameters']['schemePrefix']
 
 
 rule all:
@@ -35,12 +37,12 @@ rule mapping:
     input:
         trim = OUTDIR + "{sample}_trimmed.fastq",
     output:
-        OUTDIR + "{sample}_mapped.bam"
+        temp(OUTDIR + "{sample}_mapped.bam")
     conda:
         "envs/refmap.yaml"
     threads: 4
     params:
-        ref = os.getcwd() + "/primer_schemes/nCoV-2019.reference.fasta"
+        ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
         minimap2 -Y -t {threads} -x map-ont -a {params.ref} {input.trim} | samtools view -bF 4 - | samtools sort -@ {threads} - > {output}
@@ -51,7 +53,7 @@ rule bamIndex:
     input:
         OUTDIR + "{sample}_mapped.bam"
     output:
-        OUTDIR + "{sample}_mapped.bam.bai"
+        temp(OUTDIR + "{sample}_mapped.bam.bai")
     conda:
         "envs/refmap.yaml"
     threads: 1
@@ -64,17 +66,17 @@ rule bamIndex:
 rule trimAlignment:
     input:
         bamfile = OUTDIR + "{sample}_mapped.bam",
-        sortfile = OUTDIR + "{sample}_mapped.bam.bai"
+        bamindex = OUTDIR + "{sample}_mapped.bam.bai"
     output:
         report = OUTDIR + "{sample}.alignreport.txt",
         dropped = OUTDIR + "{sample}.alignreport.er",
-        trimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam",
+        trimmedBamfile = temp(OUTDIR + "{sample}.trimmed.rg.sorted.bam"),
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam"
     conda:
         "envs/artic.yaml"
     params:
         prefix = "{sample}", 
-        scheme = os.getcwd() + "/primer_schemes/nCoV-2019.scheme.bed"
+        scheme = SCHEMEDIR + SCHEMEPREFIX + ".scheme.bed"
     shell:
         """
         align_trim --start --normalise 200 {params.scheme} --report {output.report} < {input.bamfile} 2> {output.dropped} | samtools sort -T {params.prefix} - -o {output.trimmedBamfile};
@@ -87,7 +89,7 @@ rule indexTrimmedBam:
         trimmedBamfile = OUTDIR + "{sample}.trimmed.rg.sorted.bam",
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam"
     output:
-        trimmedBamfileIndex = OUTDIR + "{sample}.trimmed.rg.sorted.bam.bai",
+        trimmedBamfileIndex = temp(OUTDIR + "{sample}.trimmed.rg.sorted.bam.bai"),
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai"
     conda:
         "envs/refmap.yaml"
@@ -104,10 +106,10 @@ rule splitPrimerpool:
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai"
     output:
-        pool1Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam",
-        pool2Bam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam",
-        pool1Index = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam.bai",
-        pool2Index = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam.bai"
+        pool1Bam = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam"),
+        pool2Bam = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam"),
+        pool1Index = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam.bai"),
+        pool2Index = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam.bai")
     conda:
         "envs/refmap.yaml"
     threads: 1
@@ -123,9 +125,9 @@ rule splitPrimerpool:
 rule medakaConsensus:
     input:
         poolBam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam",
-        poolIndex = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam.bai",
+        poolIndex = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam.bai"
     output:
-        poolHdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.hdf",
+        poolHdf = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.hdf")
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -137,14 +139,14 @@ rule medakaConsensus:
 
 rule medakaVariant:
     input:
-        poolHdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.hdf",
+        poolHdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.hdf"
     output:
-        poolVcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.vcf",
+        poolVcf = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.vcf")
     conda:
         "envs/artic.yaml"
     threads: 1
     params:
-        ref = os.getcwd() + "/primer_schemes/nCoV-2019.reference.fasta"
+        ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
         medaka variant {params.ref} {input.poolHdf} {output.poolVcf};
@@ -156,14 +158,14 @@ rule vcfMerge:
         pool1Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.vcf",
         pool2Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.vcf"
     output:
-        mergedVcf = OUTDIR + "{sample}.merged.vcf",
+        mergedVcf = temp(OUTDIR + "{sample}.merged.vcf")
     conda:
         "envs/artic.yaml"
     threads: 1
     params: 
         prefix = "{sample}",
         outdir = OUTDIR,
-        scheme = os.getcwd() + "/primer_schemes/nCoV-2019.scheme.bed"
+        scheme = os.getcwd() + "/" + SCHEMEDIR + SCHEMEPREFIX + ".scheme.bed"
     shell:
         """
         cd {params.outdir}
@@ -174,7 +176,7 @@ rule vcfMerge:
 
 rule vcfBGzip:
     input: OUTDIR + "{sample}.merged.vcf"
-    output: OUTDIR + "{sample}.merged.vcf.gz"
+    output: temp(OUTDIR + "{sample}.merged.vcf.gz")
     conda: "envs/artic.yaml"
     shell:
         """
@@ -184,7 +186,7 @@ rule vcfBGzip:
 
 rule vcfMergeTabix:
     input: OUTDIR + "{sample}.merged.vcf.gz"
-    output: OUTDIR + "{sample}.merged.vcf.gz.tbi"
+    output: temp(OUTDIR + "{sample}.merged.vcf.gz.tbi")
     conda: "envs/artic.yaml"
     shell:
         """
@@ -194,16 +196,17 @@ rule vcfMergeTabix:
 
 rule longshot:
     input:
+        mergedVcfGz = OUTDIR + "{sample}.merged.vcf.gz",
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai",
         mergedTabix = OUTDIR + "{sample}.merged.vcf.gz.tbi"
-    output: OUTDIR + "{sample}.longshot.vcf"
+    output: temp(OUTDIR + "{sample}.longshot.vcf")
     conda:
         "envs/artic.yaml"
     threads: 1
     params: 
         prefix = OUTDIR + "{sample}",
-        ref = os.getcwd() + "/primer_schemes/nCoV-2019.reference.fasta"
+        ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
         longshot -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
@@ -213,8 +216,8 @@ rule longshot:
 rule vcfFilter:
     input: OUTDIR + "{sample}.longshot.vcf"
     output: 
-        vcfPass = OUTDIR + "{sample}.pass.vcf",
-        vcfFail = OUTDIR + "{sample}.fail.vcf"
+        vcfPass = temp(OUTDIR + "{sample}.pass.vcf"),
+        vcfFail = temp(OUTDIR + "{sample}.fail.vcf")
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -228,12 +231,12 @@ rule depthMask:
     input:
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai"
-    output: OUTDIR + "{sample}.coverage_mask.txt"
+    output: temp(OUTDIR + "{sample}.coverage_mask.txt")
     conda:
         "envs/artic.yaml"
     params: 
         coverage = COVERAGE,
-        ref = os.getcwd() + "/primer_schemes/nCoV-2019.reference.fasta"
+        ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     threads: 1
     shell:
         """
@@ -253,7 +256,7 @@ rule plotAmpliconDepth:
     threads: 1
     params: 
         prefix = "{sample}",
-        scheme = os.getcwd() + "/primer_schemes/nCoV-2019.scheme.bed",
+        scheme = os.getcwd() + "/" + SCHEMEDIR + SCHEMEPREFIX + ".scheme.bed",
         outDir = OUTDIR,
     shell:
         """
@@ -265,7 +268,7 @@ rule plotAmpliconDepth:
 
 rule vcfPassBGzip:
     input: OUTDIR + "{sample}.pass.vcf"
-    output: OUTDIR + "{sample}.pass.vcf.gz"
+    output: temp(OUTDIR + "{sample}.pass.vcf.gz")
     conda: "envs/artic.yaml"
     shell:
         """
@@ -279,12 +282,12 @@ rule preconsensus:
         vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
         vcfFail = OUTDIR + "{sample}.fail.vcf"
     output: 
-        preconsensus = OUTDIR + "{sample}.preconsensus.fasta"
+        preconsensus = temp(OUTDIR + "{sample}.preconsensus.fasta")
     conda:
         "envs/artic.yaml"
     threads: 1
     params:
-        ref = os.getcwd() + "/primer_schemes/nCoV-2019.reference.fasta"
+        ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
         tabix -p vcf {input.vcfPassGz};
