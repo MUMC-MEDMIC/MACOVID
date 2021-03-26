@@ -153,8 +153,8 @@ def main(command_line = None):
     mapreads.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     mapreads.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     mapreads.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
-    mapreads.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC")
-    mapreads.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019")
+    mapreads.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC)")
+    mapreads.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
 
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
@@ -170,8 +170,8 @@ def main(command_line = None):
     rerun.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     rerun.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     rerun.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
-    rerun.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC")
-    rerun.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019")
+    rerun.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC)")
+    rerun.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
 
 
 ####################
