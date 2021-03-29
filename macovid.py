@@ -21,14 +21,14 @@ def file_name_generator(filepath):
 # Define the input files
 ###################
 
-def define_inDir(inputdir):
+def define_inDir(inputDir):
     ## Input dir treated as list. Remove square brackets
-    if bool(re.search("\[*\]", str(inputdir))):
-         inputdir = str(inputdir)[2:-2]
+    if bool(re.search("\[*\]", str(inputDir))):
+         inputdir = str(inputDir)[2:-2]
 
     ## Remove last slash if existed in the input folder
-    if str(inputdir)[-1] == "/":
-        inputdir = inputdir[:-1]
+    if str(inputDir)[-1] == "/":
+        inputdir = inputDir[:-1]
 
     return (inputdir)
     
@@ -58,20 +58,22 @@ def change_names(sampledir, manifest, reverse):
     take samples and change name according to the manifest file.
     if -rev flag is used, the samples are converted back 
     """
-    print(f'reverse is {reverse}')
+#    print(f'reverse is {reverse}')
     if reverse:
         pos = 0
     else:
         pos = 1 
 
     ## Read csv files into nested doct:
-    names = pd.read_csv(manifest, index_col = pos, sep = ",|;|\t", engine = 'python').dropna().to_dict()
+    manifest = pd.read_csv(manifest, index_col = pos, sep = ",|;|\t", engine = 'python').dropna().to_dict()
 
-    ## Extract keys (sample_ID) from manifest file
-    key = [x for x in names.keys()][0]
+    ## Extract keys (sample_ID) from manifest file into list
+    ## dict key is unhashable
+    header = [x for x in manifest.keys()][0]
 
+    print ("Changing to" ,header)
     ## Extract the values (barcodes and new names) from dict
-    barcodes = names[key]
+    dictValue = manifest[header]
 
     ## fastq folder
     folderLoc = define_inDir(sampledir)
@@ -85,24 +87,29 @@ def change_names(sampledir, manifest, reverse):
     formatNumber = lambda n: int(n) if isinstance(n,float) and n.is_integer() else n
 
     ## Loop through found fastq files
-    for fstq in fastqFiles:
+    for fastq in fastqFiles:
+        ## Strip the name of fastq file into basename
+        basename = fastq.split("/")[-1].split(".fastq")[0]
         ## Check through barcode dictionary
-        for bark,barv in barcodes.items():
-            
-            basename = fstq.split("/")[-1].split(".fastq")[0]
+        for oldName,newName in dictValue.items():
+
             ## Basename found on the barcode dictionary
-            if basename == bark:
+            if basename == oldName:
                 ## Solution if the new name is numeric or float
-                if barv.isnumeric():
-                    barv = formatNumber(barv)
+                if newName.isnumeric():
+                    newName = formatNumber(newName)
 
                 ## Rename of found fastq file
-                location = os.path.dirname(fstq)
-                newFile = location + "/" + f"{barv}.fastq"
-                shutil.move(fstq, newFile)
+                location = os.path.dirname(fastq)
+                newFile = location + "/" + f"{newName}.fastq"
+                shutil.move(fastq, newFile)
                 ## Writes run files to new list
                 runFiles.append(newFile)
 
+                if os.path.exists(newFile):
+                    print ("Renamed", oldName, "to", newName)
+                else:
+                    print ("Could not rename", oldName)
     return runFiles
 
 ###################
