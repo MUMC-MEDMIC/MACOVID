@@ -167,7 +167,7 @@ def main(command_line = None):
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
     namechange.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
     namechange.add_argument("-m", required = True, dest = "manifest")
-    namechange.add_argument("-rev", required = False, dest = "rev", action = "store_true") 
+    namechange.add_argument("-rev", required = False, dest = "rev", action = "store_false") 
 
     rerun = subparsers.add_parser("rerun", help = "Rerun samples")
     rerun.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
