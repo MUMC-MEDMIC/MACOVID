@@ -197,7 +197,7 @@ def main(command_line = None):
                 )
 
         ## fastq folder
-        folderLoc = define_inDir(inputdir = args.input_directory)
+        folderLoc = define_inDir(inputDir = args.input_directory)
 
         snakemake_in(
                 samplesin = samplesIn,
@@ -228,7 +228,7 @@ def main(command_line = None):
     elif args.mode == "rerun":
 
         ## Identify fastq folder
-        folderLoc = define_inDir(inputdir = args.input_directory)
+        folderLoc = define_inDir(inputDir = args.input_directory)
 
         ## Detect fastq files inside folder
         samplesIn = define_inFastq(inputDir = folderLoc)
