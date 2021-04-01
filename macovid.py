@@ -116,7 +116,7 @@ def change_names(sampledir, manifest, reverse):
 # Snakemake pipeline for generating consensus fastas
 ###################
 
-def snakemake_in(samplesin, folderin,  outdir, coverage, scheme, schemePrefix):
+def snakemake_in(samplesin, folderin,  outdir, coverage, scheme, schemePrefix, minLength, maxLength):
 
     ## Sample dictionary
     samplesdic = {}
@@ -127,6 +127,8 @@ def snakemake_in(samplesin, folderin,  outdir, coverage, scheme, schemePrefix):
     samplesdic['parameters']["coverage"] = coverage
     samplesdic['parameters']["scheme"] = scheme
     samplesdic['parameters']["schemePrefix"] = schemePrefix
+    samplesdic['parameters']["minLength"] = minLength
+    samplesdic['parameters']["maxLength"] = maxLength
     samplesdic["SAMPLES"] = {}
     
     # generate the samples dictionary as input for snakemake 
@@ -162,6 +164,8 @@ def main(command_line = None):
     mapreads.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
     mapreads.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC)")
     mapreads.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
+    mapreads.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
+    mapreads.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
 
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
@@ -179,7 +183,8 @@ def main(command_line = None):
     rerun.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
     rerun.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC)")
     rerun.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
-
+    rerun.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
+    rerun.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
 
 ####################
 # parsing part
@@ -205,7 +210,9 @@ def main(command_line = None):
                 outdir = args.outdir,
                 coverage = args.coverage,
                 scheme = args.schemeDir,
-                schemePrefix = args.schemePrefix
+                schemePrefix = args.schemePrefix,
+                minLength = args.minLength,
+                maxLength = args.maxLength
                 )
         if not args.local:
                 print ("Running MACOVID locally")
@@ -240,7 +247,9 @@ def main(command_line = None):
                 outdir = args.outdir,
                 coverage = args.coverage,
                 scheme = args.schemeDir,
-                schemePrefix = args.schemePrefix
+                schemePrefix = args.schemePrefix,
+                minLength = args.minLength,
+                maxLength = args.maxLength
                 )
  
         if not args.local:

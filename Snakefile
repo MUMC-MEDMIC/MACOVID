@@ -11,6 +11,8 @@ MERGE =  config['parameters']['merge_files']
 COVERAGE = config['parameters']['coverage']
 SCHEMEDIR = config['parameters']['scheme'] + "/"
 SCHEMEPREFIX = config['parameters']['schemePrefix']
+MINLENGTH = config['parameters']['minLength']
+MAXLENGTH = config['parameters']['maxLength']
 
 
 rule all:
@@ -19,17 +21,20 @@ rule all:
         expand(OUTDIR + "{sample}-boxplot.png", sample = SAMPLES),
         expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES),
 
-rule trimming:
+rule readfilter:
     input:
         lambda wildcards: SAMPLES[wildcards.sample]
     output:
         temp(OUTDIR + "{sample}_trimmed.fastq")
     conda:
         "envs/cutadapt.yaml"
+    params:
+        minLength = MINLENGTH,
+        maxLength = MAXLENGTH
     threads: 4
     shell:
         """
-        cutadapt -o {output} {input} -m 75 -j {threads}
+        cutadapt -o {output} {input} -m {params.minLength} -M {params.maxLength} -j {threads}
         """
 
 
