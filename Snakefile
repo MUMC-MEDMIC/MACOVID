@@ -73,8 +73,8 @@ rule trimAlignment:
         bamfile = OUTDIR + "{sample}_mapped.bam",
         bamindex = OUTDIR + "{sample}_mapped.bam.bai"
     output:
-        report = OUTDIR + "{sample}.alignreport.txt",
-        dropped = OUTDIR + "{sample}.alignreport.er",
+        report = temp(OUTDIR + "{sample}.alignreport.txt"),
+        dropped = temp(OUTDIR + "{sample}.alignreport.er"),
         trimmedBamfile = temp(OUTDIR + "{sample}.trimmed.rg.sorted.bam"),
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam"
     conda:
@@ -268,6 +268,7 @@ rule plotAmpliconDepth:
         cd {params.outDir}
         artic_plot_amplicon_depth --primerScheme {params.scheme} --sampleID {params.prefix} --outFilePrefix {params.prefix} {params.prefix}*.depths
         cd -
+        rm {params.outDir}{params.prefix}*.depths
         """
 
 
@@ -287,7 +288,8 @@ rule preconsensus:
         vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
         vcfFail = OUTDIR + "{sample}.fail.vcf"
     output: 
-        preconsensus = temp(OUTDIR + "{sample}.preconsensus.fasta")
+        preconsensus = temp(OUTDIR + "{sample}.preconsensus.fasta"),
+        vcfPassGzIndex = temp(OUTDIR + "{sample}.pass.vcf.gz.tbi")
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -305,7 +307,8 @@ rule consensus:
         preconsensus = OUTDIR + "{sample}.preconsensus.fasta",  
         vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
         mask = OUTDIR + "{sample}.coverage_mask.txt",
-        vcfFail = OUTDIR + "{sample}.fail.vcf"
+        vcfFail = OUTDIR + "{sample}.fail.vcf",
+        vcfPassGzIndex = OUTDIR + "{sample}.pass.vcf.gz.tbi"
 
     output: OUTDIR + "{sample}.consensus.fasta"
     conda:
