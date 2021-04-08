@@ -1,7 +1,8 @@
-name: IQtree
+name: artic
 channels:
  - bioconda
- - conda-forge
  - defaults
 dependencies:
- - iqtree
+ - python=3.6
+ - artic=1.1.3
+
