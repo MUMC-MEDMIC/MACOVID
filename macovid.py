@@ -158,7 +158,7 @@ def main(command_line = None):
     mapreads.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
     mapreads.add_argument("-o", required = True, dest = "outdir")
     mapreads.add_argument("-m", required = True, dest = "manifest")
-    mapreads.add_argument("-l", required = False, dest = "local", action = "store_false")
+    mapreads.add_argument("--cluster", required = False, dest = "cluster", action = "store_false")
     mapreads.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     mapreads.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     mapreads.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
@@ -177,7 +177,7 @@ def main(command_line = None):
     rerun.add_argument("-i", required = True, nargs = "+", dest = "input_directory")
     rerun.add_argument("-o", required = True, dest = "outdir")
     rerun.add_argument("--cores", dest = 'cores', required = True, type = int, help = 'Number of CPU cores to use')
-    rerun.add_argument("-l", required = False, dest = "local", action = "store_false")
+    rerun.add_argument("--cluster", required = False, dest = "cluster", action = "store_false")
     rerun.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     rerun.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     rerun.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
@@ -214,13 +214,13 @@ def main(command_line = None):
                 minLength = args.minLength,
                 maxLength = args.maxLength
                 )
-        if not args.local:
-                print ("Running MACOVID locally")
-                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
-                os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
-        else:
+        if not args.cluster:
                 print ("Running MACOVID on the cluster")
                 os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
+                os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+        else:
+                print ("Running MACOVID locally")
+                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
 
     elif args.mode == "namechanger":
@@ -252,13 +252,13 @@ def main(command_line = None):
                 maxLength = args.maxLength
                 )
  
-        if not args.local:
-                print ("Re-running MACOVID locally")
-                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
+        if not args.cluster:
+                print ("Running MACOVID on the cluster")
+                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
         else:
-                print ("Re-running MACOVID on the cluster")
-                os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
+                print ("Running MACOVID locally")
+                os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
     else:
         parser.print_usage()
