@@ -111,28 +111,31 @@ rule splitPrimerpool:
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai"
     output:
-        pool1Bam = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam"),
-        pool2Bam = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam"),
-        pool1Index = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.sorted.bam.bai"),
-        pool2Index = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.sorted.bam.bai")
+        pool1Bam = temp(OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_1.sorted.bam"),
+        pool2Bam = temp(OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_2.sorted.bam"),
+        pool1Index = temp(OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_1.sorted.bam.bai"),
+        pool2Index = temp(OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_2.sorted.bam.bai")
+    params:
+        pool1 = SCHEMEPREFIX + "_1",
+        pool2 = SCHEMEPREFIX + "_2"
     conda:
         "envs/refmap.yaml"
     threads: 1
     shell:
         """
-        samtools view -b -r "nCoV-2019_1" {input.primertrimmedBamfile} > {output.pool1Bam};
+        samtools view -b -r {params.pool1} {input.primertrimmedBamfile} > {output.pool1Bam};
         samtools index {output.pool1Bam};
-        samtools view -b -r "nCoV-2019_2" {input.primertrimmedBamfile} > {output.pool2Bam};
+        samtools view -b -r {params.pool2} {input.primertrimmedBamfile} > {output.pool2Bam};
         samtools index {output.pool2Bam}
         """
 
 
 rule medakaConsensus:
     input:
-        poolBam = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam",
-        poolIndex = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.sorted.bam.bai"
+        poolBam = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.sorted.bam",
+        poolIndex = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.sorted.bam.bai"
     output:
-        poolHdf = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.hdf")
+        poolHdf = temp(OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.hdf")
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -144,9 +147,9 @@ rule medakaConsensus:
 
 rule medakaVariant:
     input:
-        poolHdf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.hdf"
+        poolHdf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.hdf"
     output:
-        poolVcf = temp(OUTDIR + "{sample}.primertrimmed.nCoV-2019_{num}.vcf")
+        poolVcf = temp(OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.vcf")
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -160,8 +163,8 @@ rule medakaVariant:
 
 rule vcfMerge:
     input:
-        pool1Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_1.vcf",
-        pool2Vcf = OUTDIR + "{sample}.primertrimmed.nCoV-2019_2.vcf"
+        pool1Vcf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_1.vcf",
+        pool2Vcf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_2.vcf"
     output:
         mergedVcf = temp(OUTDIR + "{sample}.merged.vcf")
     conda:
@@ -170,11 +173,12 @@ rule vcfMerge:
     params: 
         prefix = "{sample}",
         outdir = OUTDIR,
-        scheme = os.getcwd() + "/" + SCHEMEDIR + SCHEMEPREFIX + ".scheme.bed"
+        scheme = os.getcwd() + "/" + SCHEMEDIR + SCHEMEPREFIX + ".scheme.bed",
+        schemeprefix = SCHEMEPREFIX
     shell:
         """
         cd {params.outdir}
-        artic_vcf_merge {params.prefix} {params.scheme} nCoV-2019_1:{input.pool1Vcf} nCoV-2019_2:{input.pool2Vcf} 
+        artic_vcf_merge {params.prefix} {params.scheme} {params.schemeprefix}_1:{input.pool1Vcf} {params.schemeprefix}_2:{input.pool2Vcf} 
         cd -
         """
 
