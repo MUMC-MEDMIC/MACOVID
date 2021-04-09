@@ -90,6 +90,7 @@ def change_names(sampledir, manifest, reverse):
     for fastq in fastqFiles:
         ## Strip the name of fastq file into basename
         basename = fastq.split("/")[-1].split(".fastq")[0]
+        fileEnd = fastq.split("/")[-1].split(".fastq")[1]
         ## Check through barcode dictionary
         for oldName,newName in dictValue.items():
 
@@ -101,7 +102,7 @@ def change_names(sampledir, manifest, reverse):
 
                 ## Rename of found fastq file
                 location = os.path.dirname(fastq)
-                newFile = location + "/" + f"{newName}.fastq"
+                newFile = location + "/" + f"{newName}.fastq{fileEnd}"
                 shutil.move(fastq, newFile)
                 ## Writes run files to new list
                 runFiles.append(newFile)
