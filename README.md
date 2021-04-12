@@ -103,6 +103,13 @@ python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l -cov
 Note: The program makes use of Snakemake so if the output directory contains the final files of the rerun, those files will not be reanalysed. Solution: remove or move the old files or input a new output directory. 
 
 
+## Optional manual curation of consensus
+
+Though optional, we do recommend manual curation of the trimmed merged consensus file to check frame-shift in/dels and possibly resolve single to few Ns.
+The consensus file could be uploaded to https://clades.nextstrain.org/ for basic QC.
+The MACOVID pipeline retains a bam and bam.bai file that can be used in for example IGV to manually check the mapped reads for consensus editing.
+In addition, a primers.vcf is produced in which primer mutations are stored per sample.
+
 ## Add other primer schemes
 
 To add other schemes one could add an additional folder in the primer_schemes/ directory.
