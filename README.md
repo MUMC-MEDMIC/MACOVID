@@ -32,6 +32,8 @@ conda activate macovid
 
 #### Step 3: Test workflow
 
+First time running is slow as all conda environments are created. Especially artic environment is slow to install.
+
 ```
 python macovid.py namechanger -i test/ -m test/test_manifest.csv
 python macovid.py rerun -i test/ -o test/output --cores 12
