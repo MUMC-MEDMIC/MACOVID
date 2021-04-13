@@ -15,7 +15,8 @@ def get_absolute_path(path):
     return os.path.abspath(path)
 
 def file_name_generator(filepath):
-    return os.path.splitext(os.path.basename(filepath))[0]
+#    return os.path.splitext(os.path.basename(filepath))[0]
+    return (os.path.basename(filepath).split(".fastq")[0])
 
 ###################
 # Define the input files
@@ -90,6 +91,7 @@ def change_names(sampledir, manifest, reverse):
     for fastq in fastqFiles:
         ## Strip the name of fastq file into basename
         basename = fastq.split("/")[-1].split(".fastq")[0]
+        fileEnd = fastq.split("/")[-1].split(".fastq")[1]
         ## Check through barcode dictionary
         for oldName,newName in dictValue.items():
 
@@ -101,22 +103,21 @@ def change_names(sampledir, manifest, reverse):
 
                 ## Rename of found fastq file
                 location = os.path.dirname(fastq)
-                newFile = location + "/" + f"{newName}.fastq"
+                newFile = location + "/" + f"{newName}.fastq{fileEnd}"
                 shutil.move(fastq, newFile)
                 ## Writes run files to new list
                 runFiles.append(newFile)
 
                 if os.path.exists(newFile):
                     print ("Renamed", oldName, "to", newName)
-                else:
-                    print ("Could not rename", oldName)
+
     return runFiles
 
 ###################
 # Snakemake pipeline for generating consensus fastas
 ###################
 
-def snakemake_in(samplesin, folderin,  outdir, coverage, scheme, schemePrefix, minLength, maxLength):
+def snakemake_in(samplesin, folderin, outdir, coverage, scheme, schemePrefix, minLength, maxLength):
 
     ## Sample dictionary
     samplesdic = {}
@@ -131,6 +132,11 @@ def snakemake_in(samplesin, folderin,  outdir, coverage, scheme, schemePrefix, m
     samplesdic['parameters']["maxLength"] = maxLength
     samplesdic["SAMPLES"] = {}
     
+    if len(samplesin) > 0:
+        print ("There are", len(samplesin), "samples" )
+    else:
+        print ("No samples found. Please recheck")
+        sys.exit()
     # generate the samples dictionary as input for snakemake 
     for i in samplesin:
         samplename = file_name_generator(i)
