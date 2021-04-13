@@ -30,6 +30,15 @@ conda env create -f macovid.yaml
 conda activate macovid
 ```
 
+#### Step 3: Test workflow
+
+```
+python macovid.py namechanger -i test/ -m test/test_manifest.csv
+python macovid.py rerun -i test/ -o test/output --cores 12
+```
+
+The "merged_trimmed.fasta" file in "test/output" should match "test/merged_trimmed.fasta".
+
 ## Running MACOVID
 
 ### Manifest input
