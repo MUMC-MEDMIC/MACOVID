@@ -35,6 +35,9 @@ conda activate macovid
 ```
 python macovid.py namechanger -i test/ -m test/test_manifest.csv
 python macovid.py rerun -i test/ -o test/output --cores 12
+
+#Reverse the renaming of the test samples
+python macovid.py namechanger -i test/ -m test/test_manifest.csv -rev
 ```
 
 The "merged_trimmed.fasta" file in "test/output" should match "test/merged_trimmed.fasta".
