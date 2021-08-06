@@ -1,5 +1,5 @@
 # MACOVID
-Maastricht MUMC+ Covid pipeline, adapted from [Artic-ncovid2019](https://github.com/artic-network/artic-ncov2019) pipeline.
+Maastricht UMC+ Covid pipeline, adapted from [Artic-ncovid2019](https://github.com/artic-network/artic-ncov2019) pipeline.
 
 
 ## Setting up
