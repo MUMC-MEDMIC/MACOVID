@@ -227,8 +227,7 @@ rule vcfFilter:
     input: OUTDIR + "{sample}.longshot.vcf"
     output: 
         vcfPass = temp(OUTDIR + "{sample}.pass.vcf"),
-        vcfFail = temp(OUTDIR + "{sample}.fail.vcf"),
-        vcfPrimer = temp(OUTDIR + "{sample}.primers.vcf")
+        vcfFail = temp(OUTDIR + "{sample}.fail.vcf")
     conda:
         "envs/artic.yaml"
     threads: 1
