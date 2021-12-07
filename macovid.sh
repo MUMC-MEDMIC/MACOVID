@@ -17,7 +17,9 @@ Help()
    echo "i     Input directory basecalled data."
    echo "o     Output directory covid genomes."
    echo "m     manifest file."
-   echo "t     number of cores"
+   echo "p     scheme prefix."
+   echo "s     primer_scheme path."
+   echo "t     number of cores."
    echo
 }
 
@@ -28,7 +30,11 @@ Help()
 #Options
 ######
 
-while getopts ":hi::o::m::t::" option; do
+#set defaults
+prefix=nCoV-2019/
+scheme=primer_schemes/EMC/V2
+
+while getopts ":hi::o::m::p::s::t::" option; do
    case $option in
       h) # display Help
          Help
@@ -39,6 +45,10 @@ while getopts ":hi::o::m::t::" option; do
          output=$OPTARG;;
       m) # manifest file
          mfile=$OPTARG;;
+      p) # prefix
+         prefix=$OPTARG;;
+      s) # primer_scheme path
+         scheme=$OPTARG;;
       t) # threads
          threads=$OPTARG;;
       \?) # incorrect option
@@ -65,4 +75,4 @@ echo "finished"
 ######
 
 conda activate macovid
-python macovid.py mapreads -i $input -o $output -m $mfile --cores $threads --scheme primer_schemes/EMC/v2/
+python macovid.py mapreads -i $input -o $output -m $mfile --cores $threads --scheme $scheme --scheme_prefix $prefix
