@@ -20,6 +20,7 @@ rule all:
         expand(OUTDIR + "{sample}-barplot.png", sample = SAMPLES),
         expand(OUTDIR + "{sample}-boxplot.png", sample = SAMPLES),
         expand(OUTDIR + "{sample}.consensus.fasta", sample = SAMPLES),
+        expand(OUTDIR + "{sample}.primer.vcf",sample = SAMPLES)
 
 rule readfilter:
     input:
@@ -226,13 +227,31 @@ rule vcfFilter:
     input: OUTDIR + "{sample}.longshot.vcf"
     output: 
         vcfPass = temp(OUTDIR + "{sample}.pass.vcf"),
-        vcfFail = temp(OUTDIR + "{sample}.fail.vcf")
+        vcfFail = temp(OUTDIR + "{sample}.fail.vcf"),
+        vcfPrimer = temp(OUTDIR + "{sample}.primers.vcf")
     conda:
         "envs/artic.yaml"
     threads: 1
     shell:
         """
         artic_vcf_filter --longshot {input} {output.vcfPass} {output.vcfFail}
+        """
+
+
+rule primerMutations:
+    input: 
+        vcf = OUTDIR + "{sample}.longshot.vcf",
+        vcfPass = OUTDIR + "{sample}.pass.vcf"
+    output: OUTDIR + "{sample}.primer.vcf"
+    conda:
+        "envs/bedtools.yaml"
+    params: 
+        prefix = "{sample}", 
+        scheme = SCHEMEDIR + SCHEMEPREFIX + ".scheme.bed"
+    threads: 1
+    shell:
+        """
+        bedtools intersect -a {params.scheme} -b {input.vcf} -wa -wb > {output}
         """
 
 

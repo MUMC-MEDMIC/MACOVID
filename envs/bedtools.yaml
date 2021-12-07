@@ -1,0 +1,7 @@
+name: refMapping
+channels:
+ - bioconda
+ - conda-forge
+ - defaults
+dependencies:
+ - bedtools v2.30.0
