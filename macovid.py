@@ -224,10 +224,12 @@ def main(command_line = None):
                 print ("Running MACOVID on the cluster")
                 os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
         else:
                 print ("Running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
 
     elif args.mode == "namechanger":
 
@@ -262,10 +264,12 @@ def main(command_line = None):
                 print ("Running MACOVID on the cluster")
                 os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
         else:
                 print ("Running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
     else:
         parser.print_usage()
 
