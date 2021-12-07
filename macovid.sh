@@ -31,7 +31,7 @@ Help()
 ######
 
 #set defaults
-prefix=nCoV-2019/
+prefix=nCoV-2019
 scheme=primer_schemes/EMC/V2
 
 while getopts ":hi::o::m::p::s::t::" option; do
