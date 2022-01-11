@@ -58,6 +58,25 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
 | barcode09  | SRR678_1  |
 | barcode32  | SRR0234   |
 
+### Complete pipeline including fastq concatenation (nanopore output per 4000reads)
+
+Check options of the pipeline:
+
+```
+bash macovid.sh -h
+```
+
+To run locally:
+
+```
+bash macovid.sh -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY -m MACOVID_manifest.csv  -t THREADS
+```
+
+To run on SLURM cluster:
+
+```
+sbatch macovid.sh -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY -m MACOVID_manifest.csv  -t THREADS
+```
 
 ### Analysis using manifest file
 
@@ -75,7 +94,7 @@ The manifest file could either be tab, comma or semicolon seperated. This is how
 MACOVID scans for fastq files in the input directory. Please avoid space and symbols in the input folder. Found fastq files are automatically renamed based on information from the manifest file. The output directory must be specified for the results. All the final fasta files are concatenated into a single file using the name of the input folder.
 
 ```
-python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X 
+python macovid.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X 
 ```
 
 ### Files renaming
@@ -86,13 +105,13 @@ python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_
 To rename from barcode to the sample id based on the manifest file:
 
 ```
-python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv 
+python macovid.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv 
 ```
 
 To reverse sample ID back to barcode based on the manifest file:
 
 ```
-python MACOVID.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
+python macovid.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 ```
 
 ### Rerun samples
@@ -111,7 +130,7 @@ To rerun samples from specific folder. Input files could be in gz format. The ou
 
 
 ```
-python MACOVID.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l -cov 30
+python macovid.py rerun -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY --cores X -l -cov 30
 ```
 
 Note: The program makes use of Snakemake so if the output directory contains the final files of the rerun, those files will not be reanalysed. Solution: remove or move the old files or input a new output directory. 
@@ -132,11 +151,11 @@ These files can be obtained using primalscheme https://github.com/aresti/primals
 The path to the primer scheme and prefix should be defined in the pipeline:
 
 ```
-python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X --scheme path primer_schemes/YOUR_SCHEME --scheme_prefix YOUR_SCHEME_PREFIX
+python macovid.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X --scheme path primer_schemes/YOUR_SCHEME --scheme_prefix YOUR_SCHEME_PREFIX
 ```	
 
 The merged consensus file can be trimmed to remove not sequenced parts according to your scheme:
 
 ```
-python MACOVID.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X --trim_start XX --trim_end XX
+python macovid.py mapreads -i FASTQ_DIRECTORY -m MACOVID_MANIFEST.csv -o OUTPUT_DIRECTORY --cores X --trim_start XX --trim_end XX
 ```	
