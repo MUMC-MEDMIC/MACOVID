@@ -1,6 +1,6 @@
 """
 Pipeline to analyse COVID variants
-MACOVID version 2.0
+MACOVID version 2.1.0
 MUMC+
 """
 
@@ -219,12 +219,25 @@ rule longshot:
         ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
-        longshot -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
+        longshot -I 200 -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
         """
 
+rule longGapVcf:
+    input:
+        medakaVcf = OUTDIR + "{sample}.merged.vcf.gz",
+        longshotVcf = OUTDIR + "{sample}.longshot.vcf"
+    output: 
+        temp(OUTDIR + "{sample}.longshot_corr.vcf")
+    conda:
+        "envs/longGapVcf.yaml"
+    threads: 1
+    shell:
+        """
+        Rscript scripts/long_gap_vcf.R {input.medakaVcf} {input.longshotVcf} {output}
+        """
 
 rule vcfFilter:
-    input: OUTDIR + "{sample}.longshot.vcf"
+    input: OUTDIR + "{sample}.longshot_corr.vcf"
     output: 
         vcfPass = temp(OUTDIR + "{sample}.pass.vcf"),
         vcfFail = temp(OUTDIR + "{sample}.fail.vcf")
@@ -239,9 +252,11 @@ rule vcfFilter:
 
 rule primerMutations:
     input: 
-        vcf = OUTDIR + "{sample}.longshot.vcf",
-        vcfPass = OUTDIR + "{sample}.pass.vcf"
-    output: OUTDIR + "{sample}.primer.vcf"
+         vcfPass = OUTDIR + "{sample}.pass.vcf",
+         vcfFail = OUTDIR + "{sample}.fail.vcf"
+    output: 
+         vcfPassCorr = temp(OUTDIR + "{sample}.pass_corr.vcf"),
+         primerMutationVcf = OUTDIR + "{sample}.primer.vcf"
     conda:
         "envs/bedtools.yaml"
     params: 
@@ -250,7 +265,8 @@ rule primerMutations:
     threads: 1
     shell:
         """
-        bedtools intersect -a {params.scheme} -b {input.vcf} -wa -wb > {output}
+        bedtools intersect -a {input.vcfPass} -b {input.vcfFail} -v -header > {output.vcfPassCorr}
+        bedtools intersect -a {params.scheme} -b {input.vcfPass} -wa -wb -header > {output.primerMutationVcf}
         """
 
 
@@ -295,23 +311,24 @@ rule plotAmpliconDepth:
 
 
 rule vcfPassBGzip:
-    input: OUTDIR + "{sample}.pass.vcf"
-    output: temp(OUTDIR + "{sample}.pass.vcf.gz")
+    input: vcfPassCorr = OUTDIR + "{sample}.pass_corr.vcf",
+           primerVcf = OUTDIR + "{sample}.primer.vcf"
+    output: temp(OUTDIR + "{sample}.pass_corr.vcf.gz")
     conda: "envs/artic.yaml"
     shell:
         """
-        bgzip -f {input}
+        bgzip -f {input.vcfPassCorr}
         """
 
 
 rule preconsensus:
     input: 
         mask = OUTDIR + "{sample}.coverage_mask.txt",
-        vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
+        vcfPassGz = OUTDIR + "{sample}.pass_corr.vcf.gz",
         vcfFail = OUTDIR + "{sample}.fail.vcf"
     output: 
         preconsensus = temp(OUTDIR + "{sample}.preconsensus.fasta"),
-        vcfPassGzIndex = temp(OUTDIR + "{sample}.pass.vcf.gz.tbi")
+        vcfPassGzIndex = temp(OUTDIR + "{sample}.pass_corr.vcf.gz.tbi")
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -327,10 +344,10 @@ rule preconsensus:
 rule consensus:
     input: 
         preconsensus = OUTDIR + "{sample}.preconsensus.fasta",  
-        vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
+        vcfPassGz = OUTDIR + "{sample}.pass_corr.vcf.gz",
         mask = OUTDIR + "{sample}.coverage_mask.txt",
         vcfFail = OUTDIR + "{sample}.fail.vcf",
-        vcfPassGzIndex = OUTDIR + "{sample}.pass.vcf.gz.tbi"
+        vcfPassGzIndex = OUTDIR + "{sample}.pass_corr.vcf.gz.tbi"
 
     output: OUTDIR + "{sample}.consensus.fasta"
     conda:
