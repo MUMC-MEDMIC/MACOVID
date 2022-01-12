@@ -219,7 +219,7 @@ rule longshot:
         ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
-        longshot -I 200 -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
+        longshot -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
         """
 
 rule longGapVcf:
