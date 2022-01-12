@@ -1,4 +1,4 @@
-name: refMapping
+name: bedtools
 channels:
  - bioconda
  - conda-forge
