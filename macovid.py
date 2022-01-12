@@ -168,7 +168,7 @@ def main(command_line = None):
     mapreads.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     mapreads.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     mapreads.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
-    mapreads.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC)")
+    mapreads.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC/V3", type = str, help = "path to scheme directory (default: primer_schemes/EMC/V2)")
     mapreads.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
     mapreads.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
     mapreads.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
@@ -187,7 +187,7 @@ def main(command_line = None):
     rerun.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     rerun.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     rerun.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
-    rerun.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC", type = str, help = "path to scheme directory (default: primer_schemes/EMC)")
+    rerun.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC/V3", type = str, help = "path to scheme directory (default: primer_schemes/EMC/V2)")
     rerun.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
     rerun.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
     rerun.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
@@ -224,10 +224,12 @@ def main(command_line = None):
                 print ("Running MACOVID on the cluster")
                 os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
         else:
                 print ("Running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
 
     elif args.mode == "namechanger":
 
@@ -262,10 +264,12 @@ def main(command_line = None):
                 print ("Running MACOVID on the cluster")
                 os.system(f"snakemake --cluster 'sbatch --output=/dev/null' --jobs 100 --latency-wait 90 --cores {args.cores} --use-conda -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
         else:
                 print ("Running MACOVID locally")
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
+                os.system(f"rm {args.outdir}/*.primers.vcf")
     else:
         parser.print_usage()
 

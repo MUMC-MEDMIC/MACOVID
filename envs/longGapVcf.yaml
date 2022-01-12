@@ -1,0 +1,8 @@
+name: longGapVcf
+channels:
+ - bioconda
+ - defaults
+ - conda-forge
+dependencies:
+ - r-base=3.6.2
+
