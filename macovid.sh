@@ -20,6 +20,7 @@ Help()
    echo "p     scheme prefix."
    echo "s     primer_scheme path."
    echo "t     number of cores."
+   echo "v     vcf majority call (0-100)"
    echo
 }
 
@@ -33,8 +34,9 @@ Help()
 #set defaults
 prefix=nCoV-2019
 scheme=primer_schemes/EMC/V3
+majority=66
 
-while getopts ":hi::o::m::p::s::t::" option; do
+while getopts ":hi::o::m::p::s::t::v::" option; do
    case $option in
       h) # display Help
          Help
@@ -51,6 +53,8 @@ while getopts ":hi::o::m::p::s::t::" option; do
          scheme=$OPTARG;;
       t) # threads
          threads=$OPTARG;;
+      v) # vcf filter
+         majority=$OPTARG;;
       \?) # incorrect option
          echo "Error: Invalid option\n"
          Help
@@ -75,4 +79,4 @@ echo "finished"
 ######
 
 conda activate macovid
-python macovid.py mapreads -i $input -o $output -m $mfile --cores $threads --scheme $scheme --scheme_prefix $prefix
+python macovid.py mapreads -i $input -o $output -m $mfile --cores $threads --scheme $scheme --scheme_prefix $prefix --majority $majority
