@@ -13,6 +13,7 @@ SCHEMEDIR = config['parameters']['scheme'] + "/"
 SCHEMEPREFIX = config['parameters']['schemePrefix']
 MINLENGTH = config['parameters']['minLength']
 MAXLENGTH = config['parameters']['maxLength']
+MAJORITY = config['parameters']['majority']
 
 
 rule all:
@@ -142,7 +143,7 @@ rule medakaConsensus:
     threads: 1
     shell:
         """
-        medaka consensus --chunk_len 400 --chunk_ovlp 200 --model r941_min_hac_g507 --bam_chunk 5000 {input.poolBam} {output.poolHdf};
+        medaka consensus --model r941_min_hac_g507 {input.poolBam} {output.poolHdf};
         """
 
 
@@ -210,45 +211,38 @@ rule longshot:
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai",
         mergedTabix = OUTDIR + "{sample}.merged.vcf.gz.tbi"
-    output: OUTDIR + "{sample}.longshot.vcf"
+    output: 
+        recall = OUTDIR + "{sample}.recall.vcf",
+        longshot = OUTDIR + "{sample}.longshot.vcf"
     conda:
-        "envs/artic.yaml"
+        "envs/longshot.yaml"
     threads: 1
     params: 
         prefix = OUTDIR + "{sample}",
         ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
-        longshot -P 0 -F -A --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output} --potential_variants {params.prefix}.merged.vcf.gz
+        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.recall} --potential_variants {params.prefix}.merged.vcf.gz;
+        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.longshot} 
         """
 
-rule longGapVcf:
+rule vcfPreparation:
     input:
         medakaVcf = OUTDIR + "{sample}.merged.vcf.gz",
+        recallVcf = OUTDIR + "{sample}.recall.vcf",
         longshotVcf = OUTDIR + "{sample}.longshot.vcf"
-    output: 
-        OUTDIR + "{sample}.longshot_corr.vcf"
-    conda:
-        "envs/longGapVcf.yaml"
-    threads: 1
-    shell:
-        """
-        Rscript scripts/long_gap_vcf.R {input.medakaVcf} {input.longshotVcf} {output}
-        """
-
-rule vcfFilter:
-    input: OUTDIR + "{sample}.longshot_corr.vcf"
     output: 
         vcfPass = OUTDIR + "{sample}.pass.vcf",
         vcfFail = OUTDIR + "{sample}.fail.vcf"
     conda:
-        "envs/artic.yaml"
+        "envs/longGapVcf.yaml"
+    params: 
+        majority = MAJORITY
     threads: 1
     shell:
         """
-        artic_vcf_filter --longshot {input} {output.vcfPass} {output.vcfFail}
+        Rscript scripts/long_gap_vcf.R {input.medakaVcf} {input.recallVcf} {input.longshotVcf} {params.majority} {output.vcfPass} {output.vcfFail}
         """
-
 
 rule primerMutations:
     input: 
