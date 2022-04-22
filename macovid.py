@@ -236,7 +236,7 @@ def main(command_line = None):
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
                 os.system(f"rm {args.outdir}/*.primers.vcf")
-        if not args.keep_files:
+        if not args.keepFiles:
                 print ("Temp files not removed")
         else:
                 os.system(f"rm {args.outdir}/*.alignreport.*")
@@ -293,6 +293,22 @@ def main(command_line = None):
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
                 os.system(f"rm {args.outdir}/*.primers.vcf")
+        if not args.keepFiles:
+                print ("Temp files not removed")
+        else:
+                os.system(f"rm {args.outdir}/*.alignreport.*")
+                os.system(f"rm {args.outdir}/*.coverage_mask.txt")
+                os.system(f"rm {args.outdir}/*.fail.vcf")
+                os.system(f"rm {args.outdir}/*.longshot.vcf")
+                os.system(f"rm {args.outdir}/*.vcf.gz")
+                os.system(f"rm {args.outdir}/*.vcf.gz.tbi")
+                os.system(f"rm {args.outdir}/*.preconsensus.fasta")
+                os.system(f"rm {args.outdir}/*.primertrimmed.nCoV-2019*")
+                os.system(f"rm {args.outdir}/*.recall.vcf")
+                os.system(f"rm {args.outdir}/*.trimmed.rg*")
+                os.system(f"rm {args.outdir}/*_mapped.*")
+                os.system(f"rm {args.outdir}/*_trimmed.fastq")
+
     else:
         parser.print_usage()
 
