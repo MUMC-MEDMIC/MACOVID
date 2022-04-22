@@ -174,6 +174,7 @@ def main(command_line = None):
     mapreads.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
     mapreads.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
     mapreads.add_argument("--majority", required = False, dest = "majority", default = 66, type = int, help = "majority call for vcf filtering (default: 66 (value between 0-100))")
+    mapreads.add_argument("--keep_files", required  = False, dest = "keepFiles")
 
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
@@ -194,6 +195,7 @@ def main(command_line = None):
     rerun.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
     rerun.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
     rerun.add_argument("--majority", required = False, dest = "majority", default = 66, type = int, help = "majority call for vcf filtering (default: 66 (value between 0-100))")
+    rerun.add_argument("--keep_files", required  = False, dest = "keepFiles")
 
 ####################
 # parsing part
@@ -234,6 +236,22 @@ def main(command_line = None):
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
                 os.system(f"rm {args.outdir}/*.primers.vcf")
+        if not args.keep_files:
+                print ("Temp files not removed")
+        else:
+                os.system(f"rm {args.outdir}/*.alignreport.*")
+                os.system(f"rm {args.outdir}/*.coverage_mask.txt")
+                os.system(f"rm {args.outdir}/*.fail.vcf")
+                os.system(f"rm {args.outdir}/*.longshot.vcf")
+                os.system(f"rm {args.outdir}/*.vcf.gz")
+                os.system(f"rm {args.outdir}/*.vcf.gz.tbi")
+                os.system(f"rm {args.outdir}/*.preconsensus.fasta")
+                os.system(f"rm {args.outdir}/*.primertrimmed.nCoV-2019*")
+                os.system(f"rm {args.outdir}/*.recall.vcf")
+                os.system(f"rm {args.outdir}/*.trimmed.rg*")
+                os.system(f"rm {args.outdir}/*_mapped.*")
+                os.system(f"rm {args.outdir}/*_trimmed.fastq")
+
 
     elif args.mode == "namechanger":
 
