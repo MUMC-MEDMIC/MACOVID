@@ -117,7 +117,7 @@ def change_names(sampledir, manifest, reverse):
 # Snakemake pipeline for generating consensus fastas
 ###################
 
-def snakemake_in(samplesin, folderin, outdir, coverage, scheme, schemePrefix, minLength, maxLength):
+def snakemake_in(samplesin, folderin, outdir, coverage, scheme, schemePrefix, minLength, maxLength, majority):
 
     ## Sample dictionary
     samplesdic = {}
@@ -130,6 +130,7 @@ def snakemake_in(samplesin, folderin, outdir, coverage, scheme, schemePrefix, mi
     samplesdic['parameters']["schemePrefix"] = schemePrefix
     samplesdic['parameters']["minLength"] = minLength
     samplesdic['parameters']["maxLength"] = maxLength
+    samplesdic['parameters']["majority"] = majority
     samplesdic["SAMPLES"] = {}
     
     if len(samplesin) > 0:
@@ -168,10 +169,12 @@ def main(command_line = None):
     mapreads.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     mapreads.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     mapreads.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
-    mapreads.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC/V3", type = str, help = "path to scheme directory (default: primer_schemes/EMC/V2)")
+    mapreads.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC/V4", type = str, help = "path to scheme directory (default: primer_schemes/EMC/V2)")
     mapreads.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
     mapreads.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
     mapreads.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
+    mapreads.add_argument("--majority", required = False, dest = "majority", default = 66, type = int, help = "majority call for vcf filtering (default: 66 (value between 0-100))")
+    mapreads.add_argument("--keep_files", required  = False, dest = "keepFiles")
 
 
     namechange = subparsers.add_parser("namechanger", help = "change barcode names")
@@ -187,10 +190,12 @@ def main(command_line = None):
     rerun.add_argument("--cov", required = False, dest = "coverage", default = 30, type = int, help = "min coverage per base (default: 30)")
     rerun.add_argument("--trim_start", required = False, dest = "trimStart", default = 54, type = int, help = "trim start of consensus that is not sequenced (default: 54)")	
     rerun.add_argument("--trim_end", required = False, dest = "trimEnd", default = 79, type = int, help = "trim end of consensus that is not sequenced (default: 79)")
-    rerun.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC/V3", type = str, help = "path to scheme directory (default: primer_schemes/EMC/V2)")
+    rerun.add_argument("--scheme", required = False, dest = "schemeDir", default = "primer_schemes/EMC/V4", type = str, help = "path to scheme directory (default: primer_schemes/EMC/V2)")
     rerun.add_argument("--scheme_prefix", required = False, dest = "schemePrefix", default = "nCoV-2019", type = str, help = "prefix of primer scheme (default: nCoV-2019)")
     rerun.add_argument("--min_length", required = False, dest = "minLength", default = 300, type = int, help = "minimal length of the reads (default: 300)")	
     rerun.add_argument("--max_length", required = False, dest = "maxLength", default = 700, type = int, help = "maximal length of the reads to remove obvious chimeric reads (default: 700)")
+    rerun.add_argument("--majority", required = False, dest = "majority", default = 66, type = int, help = "majority call for vcf filtering (default: 66 (value between 0-100))")
+    rerun.add_argument("--keep_files", required  = False, dest = "keepFiles")
 
 ####################
 # parsing part
@@ -218,7 +223,8 @@ def main(command_line = None):
                 scheme = args.schemeDir,
                 schemePrefix = args.schemePrefix,
                 minLength = args.minLength,
-                maxLength = args.maxLength
+                maxLength = args.maxLength,
+                majority = args.majority
                 )
         if not args.cluster:
                 print ("Running MACOVID on the cluster")
@@ -230,6 +236,22 @@ def main(command_line = None):
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
                 os.system(f"rm {args.outdir}/*.primers.vcf")
+        if not args.keepFiles:
+                print ("Temp files not removed")
+        else:
+                os.system(f"rm {args.outdir}/*.alignreport.*")
+                os.system(f"rm {args.outdir}/*.coverage_mask.txt")
+                os.system(f"rm {args.outdir}/*.fail.vcf")
+                os.system(f"rm {args.outdir}/*.longshot.vcf")
+                os.system(f"rm {args.outdir}/*.vcf.gz")
+                os.system(f"rm {args.outdir}/*.vcf.gz.tbi")
+                os.system(f"rm {args.outdir}/*.preconsensus.fasta")
+                os.system(f"rm {args.outdir}/*.primertrimmed.nCoV-2019*")
+                os.system(f"rm {args.outdir}/*.recall.vcf")
+                os.system(f"rm {args.outdir}/*.trimmed.rg*")
+                os.system(f"rm {args.outdir}/*_mapped.*")
+                os.system(f"rm {args.outdir}/*_trimmed.fastq")
+
 
     elif args.mode == "namechanger":
 
@@ -257,7 +279,8 @@ def main(command_line = None):
                 scheme = args.schemeDir,
                 schemePrefix = args.schemePrefix,
                 minLength = args.minLength,
-                maxLength = args.maxLength
+                maxLength = args.maxLength,
+                majority = args.majority
                 )
  
         if not args.cluster:
@@ -270,6 +293,22 @@ def main(command_line = None):
                 os.system(f"snakemake --cores {args.cores} --use-conda --latency-wait 30 -k -p ")
                 os.system(f"cat {args.outdir}/*.consensus.fasta | cutadapt -u {args.trimStart} -u -{args.trimEnd} - > {args.outdir}/merged_trimmed.fasta")
                 os.system(f"rm {args.outdir}/*.primers.vcf")
+        if not args.keepFiles:
+                print ("Temp files not removed")
+        else:
+                os.system(f"rm {args.outdir}/*.alignreport.*")
+                os.system(f"rm {args.outdir}/*.coverage_mask.txt")
+                os.system(f"rm {args.outdir}/*.fail.vcf")
+                os.system(f"rm {args.outdir}/*.longshot.vcf")
+                os.system(f"rm {args.outdir}/*.vcf.gz")
+                os.system(f"rm {args.outdir}/*.vcf.gz.tbi")
+                os.system(f"rm {args.outdir}/*.preconsensus.fasta")
+                os.system(f"rm {args.outdir}/*.primertrimmed.nCoV-2019*")
+                os.system(f"rm {args.outdir}/*.recall.vcf")
+                os.system(f"rm {args.outdir}/*.trimmed.rg*")
+                os.system(f"rm {args.outdir}/*_mapped.*")
+                os.system(f"rm {args.outdir}/*_trimmed.fastq")
+
     else:
         parser.print_usage()
 
