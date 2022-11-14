@@ -80,19 +80,19 @@ sbatch macovid.sh -i FASTQ_DIRECTORY -o OUTPUT_DIRECTORY -m MACOVID_manifest.csv
 
 ### Analysis using manifest file
 
-    -i Input directory  
-    -m Manifest file  
-    -o Output directory  
-    --cores Number of threads   
-    --cov min coverage per base (default: 30)  
-    --cluster Run on a slurm cluster  
-    --trim_start trim start of consensus that is not sequenced (default: 54)  
-    --trim_end trim end of consensus that is not sequenced (default: 79)  
-    --scheme path to scheme directory (default: primer_schemes/EMC/V4)
+    -i              Input directory  
+    -m              Manifest file  
+    -o              Output directory  
+    --cores         Number of threads   
+    --cov           min coverage per base (default: 30)  
+    --cluster       Run on a slurm cluster  
+    --trim_start    trim start of consensus that is not sequenced (default: 54)  
+    --trim_end      trim end of consensus that is not sequenced (default: 79)  
+    --scheme        path to scheme directory (default: primer_schemes/EMC/V4)
     --scheme_prefix prefix of primer scheme (default: nCoV-2019)
-    --min_length minimal length of the reads (default: 300)
-    --max_length maximum length of the reads (default: 700)
-    --majority majority call for vcf filtering (default: 66 (value between 0-100))
+    --min_length    minimal length of the reads (default: 300)
+    --max_length    maximum length of the reads (default: 700)
+    --majority      majority call for vcf filtering (default: 66 (value between 0-100))
 
 MACOVID scans for fastq files in the input directory. Please avoid space and symbols in the input folder. Found fastq files are automatically renamed based on information from the manifest file. The output directory must be specified for the results. All the final fasta files are concatenated into a single file using the name of the input folder.
 
@@ -119,19 +119,19 @@ python macovid.py namechanger -i FASTQ_DIRECTORY -m MACOVID_manifest.csv -rev
 
 ### Rerun samples
  
-    -i Input directory  
-    -o Output directory  
-    --cores Number of threads 
-    --cov Set coverage (Default 30)  
-    --cluster Run on a slurm cluster  
-    --trim_start trim start of consensus that is not sequenced (default: 54)  
-    --trim_end trim end of consensus that is not sequenced (default: 79)
-    --scheme path to scheme directory (default: primer_schemes/EMC/V4)
+    -i              Input directory  
+    -o              Output directory  
+    --cores         Number of threads   
+    --cov           min coverage per base (default: 30)  
+    --cluster       Run on a slurm cluster  
+    --trim_start    trim start of consensus that is not sequenced (default: 54)  
+    --trim_end      trim end of consensus that is not sequenced (default: 79)  
+    --scheme        path to scheme directory (default: primer_schemes/EMC/V4)
     --scheme_prefix prefix of primer scheme (default: nCoV-2019)
-    --min_length minimal length of the reads (default: 300)
-    --max_length maximum length of the reads (default: 700)
-    --majority majority call for vcf filtering (default: 66 (value between 0-100))
-
+    --min_length    minimal length of the reads (default: 300)
+    --max_length    maximum length of the reads (default: 700)
+    --majority      majority call for vcf filtering (default: 66 (value between 0-100))
+    
 To rerun samples from specific folder. Input files could be in gz format. The output directory and number of cores must be specified. 
 
 
