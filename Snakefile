@@ -1,6 +1,6 @@
 """
 Pipeline to analyse COVID variants
-MACOVID version 2.2.0
+MACOVID version 2.2.1
 MUMC+
 """
 
