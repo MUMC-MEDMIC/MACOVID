@@ -1,6 +1,6 @@
 """
 Pipeline to analyse COVID variants
-MACOVID version 2.2.1
+MACOVID version 2.3.0
 MUMC+
 """
 
@@ -143,15 +143,17 @@ rule medakaConsensus:
     threads: 1
     shell:
         """
-        medaka consensus --model r941_min_hac_g507 {input.poolBam} {output.poolHdf};
+        medaka consensus --model r1041_e82_260bps_hac_g632 {input.poolBam} {output.poolHdf};
         """
 
 
 rule medakaVariant:
     input:
-        poolHdf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.hdf"
+        poolHdf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.hdf",
+        poolBam = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.sorted.bam"
     output:
-        poolVcf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.vcf"
+        poolVcf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_{num}.vcf",
+        poolVcfAn = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_{num}.vcf"
     conda:
         "envs/medaka.yaml"
     threads: 1
@@ -160,15 +162,19 @@ rule medakaVariant:
     shell:
         """
         medaka variant {params.ref} {input.poolHdf} {output.poolVcf};
+        medaka tools annotate --pad 25 {output.poolVcf} {params.ref} {input.poolBam} {output.poolVcfAn}
+
         """
         
 
 rule vcfMerge:
     input:
-        pool1Vcf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_1.vcf",
-        pool2Vcf = OUTDIR + "{sample}.primertrimmed." + SCHEMEPREFIX + "_2.vcf"
+        pool1Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_1.vcf",
+        pool2Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_2.vcf"
     output:
-        mergedVcf = OUTDIR + "{sample}.merged.vcf"
+        mergedVcf = OUTDIR + "{sample}.merged.vcf",
+        medakaPass = OUTDIR + "{sample}.medakaPass.vcf",
+        medakaFail = OUTDIR + "{sample}.medakaFail.vcf"
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -179,15 +185,16 @@ rule vcfMerge:
         schemeprefix = SCHEMEPREFIX
     shell:
         """
-        cd {params.outdir}
-        artic_vcf_merge {params.prefix} {params.scheme} {params.schemeprefix}_1:{input.pool1Vcf} {params.schemeprefix}_2:{input.pool2Vcf} 
+        cd {params.outdir};
+        artic_vcf_merge {params.prefix} {params.scheme} {params.schemeprefix}_1:{input.pool1Vcf} {params.schemeprefix}_2:{input.pool2Vcf};
+        artic_vcf_filter --medaka {output.mergedVcf} {output.medakaPass} {output.medakaFail};
         cd -
         """
 
 
 rule vcfBGzip:
-    input: OUTDIR + "{sample}.merged.vcf"
-    output: OUTDIR + "{sample}.merged.vcf.gz"
+    input: OUTDIR + "{sample}.medakaPass.vcf"
+    output: OUTDIR + "{sample}.medakaPass.vcf.gz"
     conda: "envs/artic.yaml"
     shell:
         """
@@ -196,8 +203,8 @@ rule vcfBGzip:
 
 
 rule vcfMergeTabix:
-    input: OUTDIR + "{sample}.merged.vcf.gz"
-    output: OUTDIR + "{sample}.merged.vcf.gz.tbi"
+    input: OUTDIR + "{sample}.medakaPass.vcf.gz"
+    output: OUTDIR + "{sample}.medakaPass.vcf.gz.tbi"
     conda: "envs/artic.yaml"
     shell:
         """
@@ -207,13 +214,12 @@ rule vcfMergeTabix:
 
 rule longshot:
     input:
-        mergedVcfGz = OUTDIR + "{sample}.merged.vcf.gz",
+        medakaPass = OUTDIR + "{sample}.medakaPass.vcf.gz",
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai",
         mergedTabix = OUTDIR + "{sample}.merged.vcf.gz.tbi"
     output: 
-        recall = OUTDIR + "{sample}.recall.vcf",
-        longshot = OUTDIR + "{sample}.longshot.vcf"
+        recall = OUTDIR + "{sample}.recall.vcf"
     conda:
         "envs/longshot.yaml"
     threads: 1
@@ -222,15 +228,14 @@ rule longshot:
         ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
-        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.recall} --potential_variants {params.prefix}.merged.vcf.gz;
-        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.longshot} 
+        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.recall} --potential_variants {input.medakaPass};
         """
 
 rule vcfPreparation:
     input:
-        medakaVcf = OUTDIR + "{sample}.merged.vcf.gz",
-        recallVcf = OUTDIR + "{sample}.recall.vcf",
-        longshotVcf = OUTDIR + "{sample}.longshot.vcf"
+        medakaPass = OUTDIR + "{sample}.medakaPass.vcf.gz",
+        medakaFail = OUTDIR + "{sample}.medakaFail.vcf.gz",
+        recallVcf = OUTDIR + "{sample}.recall.vcf"
     output: 
         vcfPass = OUTDIR + "{sample}.pass.vcf",
         vcfFail = OUTDIR + "{sample}.fail.vcf"
@@ -241,7 +246,7 @@ rule vcfPreparation:
     threads: 1
     shell:
         """
-        Rscript scripts/long_gap_vcf.R {input.medakaVcf} {input.recallVcf} {input.longshotVcf} {params.majority} {output.vcfPass} {output.vcfFail}
+        Rscript scripts/long_gap_vcf.R {input.medakaPass} {input.medakaFail} {input.recallVcf} {params.majority} {output.vcfPass} {output.vcfFail}
         """
 
 rule primerMutations:
