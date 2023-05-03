@@ -165,16 +165,29 @@ rule medakaVariant:
         medaka tools annotate --pad 25 {output.poolVcf} {params.ref} {input.poolBam} {output.poolVcfAn}
 
         """
-        
+
+rule vcfFilt:
+    input: 
+        pool1Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_1.vcf",
+        pool2Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_2.vcf"
+    output: 
+        pool1VcfFilt = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_filt_1.vcf",
+        pool2VcfFilt = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_filt_2.vcf"
+    conda:
+        "envs/amplicon_plot.yaml"
+    threads: 1
+    shell:
+        """
+        bcftools filter -e 'DP<30' -o {output.pool1VcfFilt} {input.pool1Vcf};
+        bcftools filter -e 'DP<30' -o {output.pool2VcfFilt} {input.pool2Vcf}
+        """
 
 rule vcfMerge:
     input:
-        pool1Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_1.vcf",
-        pool2Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_2.vcf"
+        pool1Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_filt_1.vcf",
+        pool2Vcf = OUTDIR + "{sample}.primertrimmed.annotated." + SCHEMEPREFIX + "_filt_2.vcf"
     output:
-        mergedVcf = OUTDIR + "{sample}.merged.vcf",
-        medakaPass = OUTDIR + "{sample}.medakaPass.vcf",
-        medakaFail = OUTDIR + "{sample}.medakaFail.vcf"
+        mergedVcf = OUTDIR + "{sample}.merged.vcf"
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -185,16 +198,26 @@ rule vcfMerge:
         schemeprefix = SCHEMEPREFIX
     shell:
         """
-        cd {params.outdir};
-        artic_vcf_merge {params.prefix} {params.scheme} {params.schemeprefix}_1:{input.pool1Vcf} {params.schemeprefix}_2:{input.pool2Vcf};
-        artic_vcf_filter --medaka {output.mergedVcf} {output.medakaPass} {output.medakaFail};
+        cd {params.outdir}
+        artic_vcf_merge {params.prefix} {params.scheme} {params.schemeprefix}_1:{input.pool1Vcf} {params.schemeprefix}_2:{input.pool2Vcf}
         cd -
         """
 
+rule vcfMergeDupRem:
+    input: OUTDIR + "{sample}.merged.vcf"
+    output: OUTDIR + "{sample}.merged_filt.vcf"
+    conda:
+        "envs/amplicon_plot.yaml"
+    threads: 1
+    shell:
+        """
+        bcftools norm -d all -o {output} {input}
+        """
 
+       
 rule vcfBGzip:
-    input: OUTDIR + "{sample}.medakaPass.vcf"
-    output: OUTDIR + "{sample}.medakaPass.vcf.gz"
+    input: OUTDIR + "{sample}.merged_filt.vcf"
+    output: OUTDIR + "{sample}.merged_filt.vcf.gz"
     conda: "envs/artic.yaml"
     shell:
         """
@@ -203,8 +226,8 @@ rule vcfBGzip:
 
 
 rule vcfMergeTabix:
-    input: OUTDIR + "{sample}.medakaPass.vcf.gz"
-    output: OUTDIR + "{sample}.medakaPass.vcf.gz.tbi"
+    input: OUTDIR + "{sample}.merged_filt.vcf.gz"
+    output: OUTDIR + "{sample}.merged_filt.vcf.gz.tbi"
     conda: "envs/artic.yaml"
     shell:
         """
@@ -214,12 +237,13 @@ rule vcfMergeTabix:
 
 rule longshot:
     input:
-        medakaPass = OUTDIR + "{sample}.medakaPass.vcf.gz",
+        mergedVcfGz = OUTDIR + "{sample}.merged_filt.vcf.gz",
         primertrimmedBamfile = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam",
         primertrimmedBamfileIndex = OUTDIR + "{sample}.primertrimmed.rg.sorted.bam.bai",
-        mergedTabix = OUTDIR + "{sample}.merged.vcf.gz.tbi"
+        mergedTabix = OUTDIR + "{sample}.merged_filt.vcf.gz.tbi"
     output: 
-        recall = OUTDIR + "{sample}.recall.vcf"
+        recall = OUTDIR + "{sample}.recall.vcf",
+        longshot = OUTDIR + "{sample}.longshot.vcf"
     conda:
         "envs/longshot.yaml"
     threads: 1
@@ -228,14 +252,15 @@ rule longshot:
         ref = SCHEMEDIR + SCHEMEPREFIX + ".reference.fasta"
     shell:
         """
-        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.recall} --potential_variants {input.medakaPass};
+        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.recall} --potential_variants {input.mergedVcfGz};
+        longshot -P 0 -F -c 30 -C 850 --no_haps --bam {input.primertrimmedBamfile} --ref {params.ref} --out {output.longshot} 
         """
 
 rule vcfPreparation:
     input:
-        medakaPass = OUTDIR + "{sample}.medakaPass.vcf.gz",
-        medakaFail = OUTDIR + "{sample}.medakaFail.vcf.gz",
-        recallVcf = OUTDIR + "{sample}.recall.vcf"
+        medakaVcf = OUTDIR + "{sample}.merged_filt.vcf.gz",
+        recallVcf = OUTDIR + "{sample}.recall.vcf",
+        longshotVcf = OUTDIR + "{sample}.longshot.vcf"
     output: 
         vcfPass = OUTDIR + "{sample}.pass.vcf",
         vcfFail = OUTDIR + "{sample}.fail.vcf"
@@ -246,7 +271,7 @@ rule vcfPreparation:
     threads: 1
     shell:
         """
-        Rscript scripts/long_gap_vcf.R {input.medakaPass} {input.medakaFail} {input.recallVcf} {params.majority} {output.vcfPass} {output.vcfFail}
+        Rscript scripts/long_gap_vcf.R {input.medakaVcf} {input.recallVcf} {input.longshotVcf} {params.majority} {output.vcfPass} {output.vcfFail}
         """
 
 rule primerMutations:
@@ -287,12 +312,12 @@ rule depthMask:
 rule plotAmpliconDepth:
     input: 
         maskdepth = OUTDIR + "{sample}.coverage_mask.txt",
-        mergedTabix = OUTDIR + "{sample}.merged.vcf.gz.tbi"
+        primerMutationVcf = OUTDIR + "{sample}.primer.vcf"
     output:
         barplot = OUTDIR + "{sample}-barplot.png",
         boxplot = OUTDIR + "{sample}-boxplot.png"
     conda:
-        "envs/artic.yaml"
+        "envs/amplicon_plot.yaml"
     threads: 1
     params: 
         prefix = "{sample}",
@@ -300,9 +325,9 @@ rule plotAmpliconDepth:
         outDir = OUTDIR,
     shell:
         """
-        cd {params.outDir}
-        artic_plot_amplicon_depth --primerScheme {params.scheme} --sampleID {params.prefix} --outFilePrefix {params.prefix} {params.prefix}*.depths
-        cd -
+        cd {params.outDir};
+        artic_plot_amplicon_depth --primerScheme {params.scheme} --sampleID {params.prefix} --outFilePrefix {params.prefix} {params.prefix}*.depths;
+        cd -;
         rm {params.outDir}{params.prefix}*.depths
         """
 
@@ -348,7 +373,7 @@ rule consensus:
 
     output: OUTDIR + "{sample}.consensus.fasta"
     conda:
-        "envs/artic.yaml"
+        "envs/amplicon_plot.yaml"
     threads: 1
     params: "{sample}"
     shell:
