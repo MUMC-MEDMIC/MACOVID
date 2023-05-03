@@ -34,7 +34,7 @@ Help()
 
 #set defaults
 prefix=nCoV-2019
-scheme=primer_schemes/EMC/V4
+scheme=primer_schemes/EMC/V5
 majority=66
 keepfiles='false'
 
@@ -74,8 +74,8 @@ source ~/.bashrc
 ######
 
 echo "concatenate fastq files"
-rm ${input}/*.fastq
-for i in $(ls -d ${input}/*); do echo $i; zcat ${i}/*.fastq.gz > ${i}.fastq; done
+#rm ${input}/*.fastq
+#for i in $(ls -d ${input}/*); do echo $i; zcat ${i}/*.fastq.gz > ${i}.fastq; done
 echo "finished"
 
 ######

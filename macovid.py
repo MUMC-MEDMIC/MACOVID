@@ -251,6 +251,7 @@ def main(command_line = None):
                 os.system(f"rm {args.outdir}/*.trimmed.rg*")
                 os.system(f"rm {args.outdir}/*_mapped.*")
                 os.system(f"rm {args.outdir}/*_trimmed.fastq")
+                os.system(f"echo removed")
 
 
     elif args.mode == "namechanger":
