@@ -274,9 +274,20 @@ rule vcfPreparation:
         Rscript scripts/long_gap_vcf.R {input.medakaVcf} {input.recallVcf} {input.longshotVcf} {params.majority} {output.vcfPass} {output.vcfFail}
         """
 
+rule vcfPassDupRem:
+    input: OUTDIR + "{sample}.pass.vcf"
+    output: OUTDIR + "{sample}.pass_filt.vcf"
+    conda:
+        "envs/amplicon_plot.yaml"
+    threads: 1
+    shell:
+        """
+        bcftools norm -d all -o {output} {input}
+        """
+
 rule primerMutations:
     input: 
-         vcfPass = OUTDIR + "{sample}.pass.vcf",
+         vcfPass = OUTDIR + "{sample}.pass_filt.vcf",
          vcfFail = OUTDIR + "{sample}.fail.vcf"
     output: 
          primerMutationVcf = OUTDIR + "{sample}.primer.vcf"
@@ -333,9 +344,9 @@ rule plotAmpliconDepth:
 
 
 rule vcfPassBGzip:
-    input: vcfPass = OUTDIR + "{sample}.pass.vcf",
+    input: vcfPass = OUTDIR + "{sample}.pass_filt.vcf",
            primerVcf = OUTDIR + "{sample}.primer.vcf"
-    output: OUTDIR + "{sample}.pass.vcf.gz"
+    output: OUTDIR + "{sample}.pass_filt.vcf.gz"
     conda: "envs/artic.yaml"
     shell:
         """
@@ -346,11 +357,11 @@ rule vcfPassBGzip:
 rule preconsensus:
     input: 
         mask = OUTDIR + "{sample}.coverage_mask.txt",
-        vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
+        vcfPassGz = OUTDIR + "{sample}.pass_filt.vcf.gz",
         vcfFail = OUTDIR + "{sample}.fail.vcf"
     output: 
         preconsensus = OUTDIR + "{sample}.preconsensus.fasta",
-        vcfPassGzIndex = OUTDIR + "{sample}.pass.vcf.gz.tbi"
+        vcfPassGzIndex = OUTDIR + "{sample}.pass_filt.vcf.gz.tbi"
     conda:
         "envs/artic.yaml"
     threads: 1
@@ -366,10 +377,10 @@ rule preconsensus:
 rule consensus:
     input: 
         preconsensus = OUTDIR + "{sample}.preconsensus.fasta",  
-        vcfPassGz = OUTDIR + "{sample}.pass.vcf.gz",
+        vcfPassGz = OUTDIR + "{sample}.pass_filt.vcf.gz",
         mask = OUTDIR + "{sample}.coverage_mask.txt",
         vcfFail = OUTDIR + "{sample}.fail.vcf",
-        vcfPassGzIndex = OUTDIR + "{sample}.pass.vcf.gz.tbi"
+        vcfPassGzIndex = OUTDIR + "{sample}.pass_filt.vcf.gz.tbi"
 
     output: OUTDIR + "{sample}.consensus.fasta"
     conda:

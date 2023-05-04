@@ -44,7 +44,7 @@ longshotVcf.table[nchar(longshotVcf.table[,4]) < nchar(longshotVcf.table[,5]),11
 
 #extract number of reads for majority call recall (not possible for INDELS)
 #longshot does not consistently call INDELS and Medaka does not provide REF and ALT counts
-x <- recallVcf.table[recallVcf.table[,11] %in% c("mSNP","SNP"),1:10]
+x <- recallVcf.table[recallVcf.table[,11] %in% c("SNP"),1:10]
 x[,11] <- apply(x, 1, function(x){strsplit(gsub("AC=","",strsplit(as.character(x[8]),split = ";")[[1]][2]),split = ",")[[1]][1]})
 x[,12] <- apply(x, 1, function(x){strsplit(gsub("AC=","",strsplit(as.character(x[8]),split = ";")[[1]][2]),split = ",")[[1]][2]})
 
@@ -63,7 +63,7 @@ x <- x[x[,15] >=30,]
 
 #extract number of reads for majority call recall (not possible for INDELS)
 #longshot does not consistently call INDELS and Medaka does not provide REF and ALT counts
-x2 <- longshotVcf.table[longshotVcf.table[,11] %in% c("mSNP","SNP"),1:10]
+x2 <- longshotVcf.table[longshotVcf.table[,11] %in% c("SNP"),1:10]
 x2[,11] <- apply(x2, 1, function(x2){strsplit(gsub("AC=","",strsplit(as.character(x2[8]),split = ";")[[1]][2]),split = ",")[[1]][1]})
 x2[,12] <- apply(x2, 1, function(x2){strsplit(gsub("AC=","",strsplit(as.character(x2[8]),split = ";")[[1]][2]),split = ",")[[1]][2]})
 
@@ -117,7 +117,7 @@ vcfPass.table <- vcfPass.table[order(vcfPass.table[,2], -nchar(as.character(vcfP
 vcfFail.table <- vcfFail.table[order(vcfFail.table[,2], -nchar(as.character(vcfFail.table[,4]))),1:10] 
 
 #Vcf header
-longshot.header <- recallVcf[grep("#",recallVcf)]
+longshot.header <- longshotVcf[grep("#",longshotVcf)]
 
 #write vcfPass
 writeLines(longshot.header,
