@@ -74,8 +74,8 @@ source ~/.bashrc
 ######
 
 echo "concatenate fastq files"
-#rm ${input}/*.fastq
-#for i in $(ls -d ${input}/*); do echo $i; zcat ${i}/*.fastq.gz > ${i}.fastq; done
+rm ${input}/*.fastq
+for i in $(ls -d ${input}/*); do echo $i; zcat ${i}/*.fastq.gz > ${i}.fastq; done
 echo "finished"
 
 ######
