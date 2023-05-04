@@ -18,10 +18,15 @@ medakaVcf.table <- read.table(text=medakaVcf[(max(grep("#",medakaVcf))+1):length
 recallVcf.table <- read.table(text=recallVcf[(max(grep("#",recallVcf))+1):length(recallVcf)],sep = "\t")
 longshotVcf.table <- read.table(text=longshotVcf[(max(grep("#",longshotVcf))+1):length(longshotVcf)],sep = "\t")
 
-#check for large deletions
-large.del <- medakaVcf.table[nchar(as.vector(medakaVcf.table[,4]))>50,]
+#classify SNPs and INDEL medakaVcf
+medakaVcf.table[,4] <- as.character(medakaVcf.table[,4])
+medakaVcf.table[,5] <- as.character(medakaVcf.table[,5])
+medakaVcf.table[nchar(medakaVcf.table[,4]) == nchar(medakaVcf.table[,5]),11] <- "mSNP"
+medakaVcf.table[nchar(medakaVcf.table[,4]) == 1 & nchar(medakaVcf.table[,5]) == 1,11] <- "SNP"
+medakaVcf.table[nchar(medakaVcf.table[,4]) > nchar(medakaVcf.table[,5]),11] <- "DEL"
+medakaVcf.table[nchar(medakaVcf.table[,4]) < nchar(medakaVcf.table[,5]),11] <- "INS"
 
-#classify SNPs and INDEL
+#classify SNPs and INDEL recall
 recallVcf.table[,4] <- as.character(recallVcf.table[,4])
 recallVcf.table[,5] <- as.character(recallVcf.table[,5])
 recallVcf.table[nchar(recallVcf.table[,4]) == nchar(recallVcf.table[,5]),11] <- "mSNP"
@@ -29,23 +34,56 @@ recallVcf.table[nchar(recallVcf.table[,4]) == 1 & nchar(recallVcf.table[,5]) == 
 recallVcf.table[nchar(recallVcf.table[,4]) > nchar(recallVcf.table[,5]),11] <- "DEL"
 recallVcf.table[nchar(recallVcf.table[,4]) < nchar(recallVcf.table[,5]),11] <- "INS"
 
-#concatenate recall and longshot vcf files
-if(nrow(recallVcf.table) > 1 & nrow(longshotVcf.table) > 1){
-	x <- rbind(longshotVcf.table,recallVcf.table[recallVcf.table[,11] %in% c("INS","DEL"),1:10])
-} else {
-	x <- recallVcf.table
-}
+#classify SNPs and INDEL recall
+longshotVcf.table[,4] <- as.character(longshotVcf.table[,4])
+longshotVcf.table[,5] <- as.character(longshotVcf.table[,5])
+longshotVcf.table[nchar(longshotVcf.table[,4]) == nchar(longshotVcf.table[,5]),11] <- "mSNP"
+longshotVcf.table[nchar(longshotVcf.table[,4]) == 1 & nchar(longshotVcf.table[,5]) == 1,11] <- "SNP"
+longshotVcf.table[nchar(longshotVcf.table[,4]) > nchar(longshotVcf.table[,5]),11] <- "DEL"
+longshotVcf.table[nchar(longshotVcf.table[,4]) < nchar(longshotVcf.table[,5]),11] <- "INS"
 
-#extract number of reads for majority call
+#extract number of reads for majority call recall (not possible for INDELS)
+#longshot does not consistently call INDELS and Medaka does not provide REF and ALT counts
+x <- recallVcf.table[recallVcf.table[,11] %in% c("SNP"),1:10]
 x[,11] <- apply(x, 1, function(x){strsplit(gsub("AC=","",strsplit(as.character(x[8]),split = ";")[[1]][2]),split = ",")[[1]][1]})
 x[,12] <- apply(x, 1, function(x){strsplit(gsub("AC=","",strsplit(as.character(x[8]),split = ";")[[1]][2]),split = ",")[[1]][2]})
-
 
 #calculate ALT/REF reads
 x[,13] <- apply(x,1,function(x){as.numeric(x[12]) / (as.numeric(x[11]) + as.numeric(x[12])) * 100})
 
 #variants passing majority call
 x[,14] <- as.numeric(x[,13]) >= majority
+
+#depth candidate position
+x[,15] <- apply(x, 1, function(x){strsplit(gsub("DP=","",strsplit(as.character(x[8]),split = ";")[[1]][1]),split = ",")[[1]][1]})
+x[,15] <- as.numeric(x[,15])
+
+#remove less than 30x coverage SNPs
+x <- x[x[,15] >=30,]
+
+#extract number of reads for majority call recall (not possible for INDELS)
+#longshot does not consistently call INDELS and Medaka does not provide REF and ALT counts
+x2 <- longshotVcf.table[longshotVcf.table[,11] %in% c("SNP"),1:10]
+x2[,11] <- apply(x2, 1, function(x2){strsplit(gsub("AC=","",strsplit(as.character(x2[8]),split = ";")[[1]][2]),split = ",")[[1]][1]})
+x2[,12] <- apply(x2, 1, function(x2){strsplit(gsub("AC=","",strsplit(as.character(x2[8]),split = ";")[[1]][2]),split = ",")[[1]][2]})
+
+#calculate ALT/REF reads
+x2[,13] <- apply(x2,1,function(x2){as.numeric(x2[12]) / (as.numeric(x2[11]) + as.numeric(x2[12])) * 100})
+
+#variants passing majority call
+x2[,14] <- as.numeric(x2[,13]) >= majority
+
+#depth candidate position
+x2[,15] <- apply(x2, 1, function(x2){strsplit(gsub("DP=","",strsplit(as.character(x2[8]),split = ";")[[1]][1]),split = ",")[[1]][1]})
+x2[,15] <- as.numeric(x2[,15])
+
+#remove less than 30x coverage SNPs
+x2 <- x2[x2[,15] >=30,]
+
+
+#merge longshot vcf
+x <- rbind(x,x2)
+
 
 #split vcf in pass and fail
 vcfPass.table <- x[x[,14] %in% TRUE,]
@@ -55,21 +93,23 @@ vcfPass.table <- vcfPass.table[!(vcfPass.table[,2] %in% vcfFail.table[,2]),]
 #remove failed ALT that meet majority call for REF
 vcfFail.table <- vcfFail.table[!(as.numeric(vcfFail.table[,13]) <= (100-majority)),]
 
+#extract INDELS of medakaPass
+indel <- medakaVcf.table[medakaVcf.table[,11] %in% c("INS","DEL"),1:10]
 
 #change medaka format to longshot format
-if(nrow(large.del)>0)
+if(nrow(indel)>0)
 {
-  large.del[,6] <- "500.00" 
-  large.del[,7] <- "PASS"
-  large.del[,8] <- "DP=395;AC=0,371;AM=24;MC=0;MF=0.000;MB=0.000;AQ=14.57;GM=1;PH=6.02,6.02,6.02,6.02;SC=None;"
-  large.del[,9] <- "GT:GQ:PS:UG:UQ"
-  large.del[,10] <- "1/1:500.00:.:1/1:500.00"
+  indel[,6] <- "500" 
+  indel[,7] <- "PASS"
+  indel[,8] <- "DP=400;AC=0,398;AM=2;MC=0;MF=0.000;MB=0.000;AQ=23.21;GM=1;PH=6.02,6.02,6.02,6.02;SC=None;"
+  indel[,9] <- "GT:GQ:DP:PS:UG:UQ"
+  indel[,10] <- "1/1:500:400:.:1/1:500.00"
 }
 
 #add long gap to vcf file
-if(nrow(large.del)>0)
+if(nrow(indel)>0)
 {
-  vcfPass.table <- rbind(vcfPass.table[,1:10], large.del)
+  vcfPass.table <- rbind(vcfPass.table[,1:10], indel)
 } 
 
 #order vcf files
@@ -83,24 +123,24 @@ longshot.header <- longshotVcf[grep("#",longshotVcf)]
 writeLines(longshot.header,
            args[5])
 if(nrow(vcfPass.table) > 0){
-	write.table(vcfPass.table,
-				args[5],
-				append = TRUE,
-				quote = FALSE,
-				col.names = FALSE,
-				row.names = FALSE,
-				sep = "\t")
+  write.table(vcfPass.table,
+              args[5],
+              append = TRUE,
+              quote = FALSE,
+              col.names = FALSE,
+              row.names = FALSE,
+              sep = "\t")
 }
 
 #write vcfFail
 writeLines(longshot.header,
            args[6])
 if(nrow(vcfFail.table) > 0){
-	write.table(vcfFail.table,
-				args[6],
-				append = TRUE,
-				quote = FALSE,
-				col.names = FALSE,
-				row.names = FALSE,
-				sep = "\t")
+  write.table(vcfFail.table,
+              args[6],
+              append = TRUE,
+              quote = FALSE,
+              col.names = FALSE,
+              row.names = FALSE,
+              sep = "\t")
 }

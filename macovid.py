@@ -242,6 +242,8 @@ def main(command_line = None):
                 os.system(f"rm {args.outdir}/*.alignreport.*")
                 os.system(f"rm {args.outdir}/*.coverage_mask.txt")
                 os.system(f"rm {args.outdir}/*.fail.vcf")
+                os.system(f"rm {args.outdir}/*.pass.vcf")
+                os.system(f"rm {args.outdir}/*.merged.vcf")
                 os.system(f"rm {args.outdir}/*.longshot.vcf")
                 os.system(f"rm {args.outdir}/*.vcf.gz")
                 os.system(f"rm {args.outdir}/*.vcf.gz.tbi")
@@ -249,8 +251,10 @@ def main(command_line = None):
                 os.system(f"rm {args.outdir}/*.primertrimmed.nCoV-2019*")
                 os.system(f"rm {args.outdir}/*.recall.vcf")
                 os.system(f"rm {args.outdir}/*.trimmed.rg*")
+                os.system(f"rm {args.outdir}/*annotated*")
                 os.system(f"rm {args.outdir}/*_mapped.*")
                 os.system(f"rm {args.outdir}/*_trimmed.fastq")
+                os.system(f"echo removed")
 
 
     elif args.mode == "namechanger":
@@ -299,6 +303,8 @@ def main(command_line = None):
                 os.system(f"rm {args.outdir}/*.alignreport.*")
                 os.system(f"rm {args.outdir}/*.coverage_mask.txt")
                 os.system(f"rm {args.outdir}/*.fail.vcf")
+                os.system(f"rm {args.outdir}/*.pass.vcf")
+                os.system(f"rm {args.outdir}/*.merged.vcf")
                 os.system(f"rm {args.outdir}/*.longshot.vcf")
                 os.system(f"rm {args.outdir}/*.vcf.gz")
                 os.system(f"rm {args.outdir}/*.vcf.gz.tbi")
@@ -306,8 +312,10 @@ def main(command_line = None):
                 os.system(f"rm {args.outdir}/*.primertrimmed.nCoV-2019*")
                 os.system(f"rm {args.outdir}/*.recall.vcf")
                 os.system(f"rm {args.outdir}/*.trimmed.rg*")
+                os.system(f"rm {args.outdir}/*annotated*")
                 os.system(f"rm {args.outdir}/*_mapped.*")
                 os.system(f"rm {args.outdir}/*_trimmed.fastq")
+                os.system(f"echo removed")
 
     else:
         parser.print_usage()

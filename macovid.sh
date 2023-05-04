@@ -34,7 +34,7 @@ Help()
 
 #set defaults
 prefix=nCoV-2019
-scheme=primer_schemes/EMC/V4
+scheme=primer_schemes/EMC/V5
 majority=66
 keepfiles='false'
 

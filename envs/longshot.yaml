@@ -3,5 +3,5 @@ channels:
  - bioconda
  - defaults
 dependencies:
- - longshot=0.4.1
+ - longshot=0.4.5
 
